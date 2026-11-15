@@ -11,6 +11,9 @@ import DeleteConfirmModal from './components/DeleteConfirmModal';
 import NotificationToast from './components/NotificationToast';
 import ChatWidget from './components/ChatWidget';
 import TeamAuthGate from './components/TeamAuthGate';
+import Dashboard from './features/dashboard/Dashboard';
+import ProjectWorkspace from './features/projects/ProjectWorkspace';
+import './features/dashboard/dashboard.css';
 import SwitchRoleModal from './components/SwitchRoleModal';
 import { authService } from './services/authService';
 import { CATEGORIES, INITIAL_REFERENCES } from './data/initialData';
@@ -62,10 +65,11 @@ export default function App() {
   });
 
   // Authenticated Team Member (Restricts access to the 5 authorized roles)
-  const [authenticatedMember, setAuthenticatedMember] = useState(() =>
-    authService.getAuthenticatedMember()
-  );
+  const [authenticatedMember, setAuthenticatedMember] = useState(null);
+  const [authReady, setAuthReady] = useState(false);
+  useEffect(() => { authService.current().then((user) => { setAuthenticatedMember(user); setAuthReady(true); }); }, []);
   const [isSwitchRoleModalOpen, setIsSwitchRoleModalOpen] = useState(false);
+  const [selectedProject, setSelectedProject] = useState(null);
 
   // Active Category: null = 3 Cards Main Page; 'b2b' | 'admin' | 'driver' = Category Gallery
   const [activeCategory, setActiveCategory] = useState(null);
@@ -402,6 +406,11 @@ export default function App() {
       setIsDeletingMedia(false);
     }
   };
+
+  if (!authReady) return <div className="collabs-auth-gate-backdrop"><p>Checking your secure session…</p></div>;
+  if (!authenticatedMember) return <TeamAuthGate onAuthenticated={(user) => { setAuthenticatedMember(user); setSelectedProject(null); }} />;
+  if (authenticatedMember && !selectedProject) return <Dashboard user={authenticatedMember} onOpenProject={setSelectedProject} onLogout={async () => { await authService.logout(); setAuthenticatedMember(null); }} />;
+  if (authenticatedMember && selectedProject) return <ProjectWorkspace user={authenticatedMember} project={selectedProject} onBack={() => setSelectedProject(null)} />;
 
   return (
     <div className="minimal-app">
