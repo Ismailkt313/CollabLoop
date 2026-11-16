@@ -71,7 +71,7 @@ export default function ChatWidget({
 
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
-  const originalTitleRef = useRef(typeof document !== 'undefined' ? document.title : 'CollabS');
+  const originalTitleRef = useRef(typeof document !== 'undefined' ? document.title : 'CollabLoop • Team UI Reference & Design Hub');
   const titleIntervalRef = useRef(null);
 
   // Voice recorder references
@@ -225,7 +225,7 @@ export default function ChatWidget({
 
             const isAll = /(?:^|\s)@all\b/i.test(rawText) || incomingMsg.mentions?.some(m => (m.id || '').toLowerCase() === 'all' || (m.name || '').toLowerCase() === 'all');
             const alertTag = isAll ? '@all' : `@${currentUser.name || myRole}`;
-            startTitleBlink(`🔴 (1) New Doubt for ${alertTag} | CollabS`);
+            startTitleBlink(`🔴 (1) New Doubt for ${alertTag} | CollabLoop`);
           }
         }
       }
@@ -534,13 +534,11 @@ export default function ChatWidget({
     }
   };
 
-  // Send message
   const handleSendMessage = (e) => {
     e?.preventDefault();
     const rawText = inputText.trim();
     if (!rawText && stagedMentions.length === 0) return;
 
-    // Automatically detect @mentions from text regardless of casing (camelCase, lower, upper)
     const finalMentions = [...stagedMentions];
     const mentionRegex = /(?:^|\s)@([a-zA-Z0-9_-]+)/g;
     let match;
@@ -576,7 +574,6 @@ export default function ChatWidget({
     setMentionSearch('');
   };
 
-  // Role pill styling helper
   const getRoleBadgeStyle = (roleId) => {
     const found = TEAM_ROLES.find((r) => r.id === roleId);
     return {
@@ -588,7 +585,6 @@ export default function ChatWidget({
 
   return (
     <>
-      {/* Voice Recording Error Toast */}
       {voiceError && (
         <div className="collabs-mention-toast-alert error-toast" role="alert">
           <div className="mention-toast-icon-box error-icon-box">
@@ -608,7 +604,6 @@ export default function ChatWidget({
         </div>
       )}
 
-      {/* Floating In-App Mention Toast Alert Banner */}
       {activeMentionToast && (
         <div className="collabs-mention-toast-alert" role="alert">
           <div className="mention-toast-icon-box">
@@ -643,7 +638,6 @@ export default function ChatWidget({
         </div>
       )}
 
-      {/* Floating Trigger Button with Unread Badge */}
       {!isOpen && (
         <button
           type="button"
@@ -653,7 +647,7 @@ export default function ChatWidget({
           aria-label="Open team chat"
         >
           <div className="fab-icon-wrapper">
-            <MessageSquare size={20} />
+            <img src="/collabloop-monogram.png" alt="CollabLoop" className="fab-logo-img" />
             {unreadCount > 0 ? (
               <span className="fab-unread-counter-badge">{unreadCount}</span>
             ) : (
@@ -666,11 +660,12 @@ export default function ChatWidget({
         </button>
       )}
 
-      {/* Slide-out / Floating Chat Window */}
       {isOpen && (
         <div className="collabs-chat-drawer-container" aria-label="Team Chat Window">
-          {/* Header */}
           <div className="chat-drawer-header">
+            <div className="chat-header-brand" title="CollabLoop Chat">
+              <img src="/collabloop-monogram.png" alt="CollabLoop" className="chat-header-logo-img" />
+            </div>
             <div className="header-room-select-group">
               <button
                 type="button"
@@ -683,7 +678,6 @@ export default function ChatWidget({
                 <ChevronDown size={14} className={`chevron-icon ${showRoomDropdown ? 'rotated' : ''}`} />
               </button>
 
-              {/* Room selector dropdown */}
               {showRoomDropdown && (
                 <div className="chat-room-dropdown-menu">
                   <div className="dropdown-section-title">CHANNELS</div>
@@ -709,7 +703,6 @@ export default function ChatWidget({
             </div>
 
             <div className="header-actions-group">
-              {/* Clear Chat Button */}
               <button
                 type="button"
                 className="chat-clear-trigger-btn"
