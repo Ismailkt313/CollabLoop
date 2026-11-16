@@ -32,6 +32,11 @@ export default function SwitchRoleModal({
           <X size={15} />
         </button>
 
+        {/* Brand Logo */}
+        <div className="switch-modal-brand-row">
+          <img src="/collabloop-monogram.png" alt="CollabLoop" className="switch-modal-monogram-img" />
+        </div>
+
         {/* Icon Badge */}
         <div
           className="switch-modal-icon-badge"

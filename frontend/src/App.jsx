@@ -407,7 +407,14 @@ export default function App() {
     }
   };
 
-  if (!authReady) return <div className="collabs-auth-gate-backdrop"><p>Checking your secure session…</p></div>;
+  if (!authReady) {
+    return (
+      <div className="collabs-auth-gate-backdrop" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '16px' }}>
+        <img src="/collabloop-monogram.png" alt="CollabLoop" style={{ width: '52px', height: '52px', objectFit: 'contain' }} />
+        <p style={{ color: 'var(--text-secondary, #a4a7b2)', fontSize: '14px', margin: 0 }}>Checking your secure session…</p>
+      </div>
+    );
+  }
   if (new URLSearchParams(window.location.search).has('token') || new URLSearchParams(window.location.search).get('mode') === 'forgot') return <TeamAuthGate onAuthenticated={(user) => setAuthenticatedMember(user)} />;
   if (!authenticatedMember) return <TeamAuthGate onAuthenticated={(user) => { setAuthenticatedMember(user); setSelectedProject(null); }} />;
   if (authenticatedMember && !selectedProject) return <Dashboard user={authenticatedMember} onOpenProject={setSelectedProject} onLogout={async () => { await authService.logout(); setAuthenticatedMember(null); }} />;
@@ -426,8 +433,8 @@ export default function App() {
               onClick={() => setActiveCategory(null)}
               title="Return to Main Categories Page"
             >
-              <span className="brand-dot" />
-              <span className="brand-name">CollabS</span>
+              <img src="/collabloop-monogram.png" alt="CollabLoop" className="brand-logo-img" />
+              <span className="brand-name">CollabLoop</span>
             </button>
 
             {activeCategoryObj && (

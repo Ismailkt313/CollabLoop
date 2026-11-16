@@ -27,12 +27,11 @@ export default function Header({
         {/* Brand / Logo */}
         <div className="brand-group">
           <div className="brand-icon">
-            <Layers size={18} strokeWidth={2.2} />
+            <img src="/collabloop-monogram.png" alt="CollabLoop" className="brand-logo-img" style={{ width: '26px', height: '26px', objectFit: 'contain' }} />
           </div>
           <div className="brand-text">
             <div className="brand-title">
-              <span>Collab</span>
-              <span className="brand-badge">S</span>
+              <span>CollabLoop</span>
             </div>
             <span className="brand-subtitle">Design Benchmarks</span>
           </div>

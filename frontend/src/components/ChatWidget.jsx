@@ -71,7 +71,7 @@ export default function ChatWidget({
 
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
-  const originalTitleRef = useRef(typeof document !== 'undefined' ? document.title : 'CollabS');
+  const originalTitleRef = useRef(typeof document !== 'undefined' ? document.title : 'CollabLoop • Team UI Reference & Design Hub');
   const titleIntervalRef = useRef(null);
 
   // Voice recorder references
@@ -225,7 +225,7 @@ export default function ChatWidget({
 
             const isAll = /(?:^|\s)@all\b/i.test(rawText) || incomingMsg.mentions?.some(m => (m.id || '').toLowerCase() === 'all' || (m.name || '').toLowerCase() === 'all');
             const alertTag = isAll ? '@all' : `@${currentUser.name || myRole}`;
-            startTitleBlink(`🔴 (1) New Doubt for ${alertTag} | CollabS`);
+            startTitleBlink(`🔴 (1) New Doubt for ${alertTag} | CollabLoop`);
           }
         }
       }
@@ -653,7 +653,7 @@ export default function ChatWidget({
           aria-label="Open team chat"
         >
           <div className="fab-icon-wrapper">
-            <MessageSquare size={20} />
+            <img src="/collabloop-monogram.png" alt="CollabLoop" className="fab-logo-img" />
             {unreadCount > 0 ? (
               <span className="fab-unread-counter-badge">{unreadCount}</span>
             ) : (
@@ -671,6 +671,9 @@ export default function ChatWidget({
         <div className="collabs-chat-drawer-container" aria-label="Team Chat Window">
           {/* Header */}
           <div className="chat-drawer-header">
+            <div className="chat-header-brand" title="CollabLoop Chat">
+              <img src="/collabloop-monogram.png" alt="CollabLoop" className="chat-header-logo-img" />
+            </div>
             <div className="header-room-select-group">
               <button
                 type="button"
