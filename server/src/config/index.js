@@ -20,6 +20,16 @@ const config = Object.freeze({
   /** @type {boolean} Whether cookies should use the Secure flag */
   cookieSecure: process.env.COOKIE_SECURE === 'true',
 
+  /** @type {{ host?: string, port: number, secure: boolean, user?: string, pass?: string, from?: string }} SMTP email configuration */
+  smtp: {
+    host: process.env.SMTP_HOST,
+    port: Number(process.env.SMTP_PORT || 587),
+    secure: process.env.SMTP_SECURE === 'true',
+    user: process.env.SMTP_USER,
+    pass: process.env.SMTP_PASS,
+    from: process.env.MAIL_FROM,
+  },
+
   /** @type {{ cloudName?: string, apiKey?: string, apiSecret?: string }} Cloudinary credentials */
   cloudinary: {
     cloudName: process.env.CLOUDINARY_CLOUD_NAME,

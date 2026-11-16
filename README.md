@@ -13,7 +13,7 @@ Requirements: Node.js 20+, npm, and MongoDB Community Server installed locally. 
 5. In terminal one run `npm run dev:server`; in terminal two run `npm run dev`. Vite proxies `/api` and Socket.IO to port 5000.
 6. Visit `http://localhost:2345`. Create an account or sign in. Passwords are bcrypt hashed; session JWTs are delivered in HTTP-only cookies.
 
-Production: set `COOKIE_SECURE=true`, a strong secret, a trusted `CLIENT_ORIGIN` and backend-only Cloudinary credentials, then run `npm run build` and `npm --prefix server start` behind HTTPS. Restrict CORS to your exact client origin.
+Production: set `COOKIE_SECURE=true`, a strong secret, a trusted `CLIENT_ORIGIN` and backend-only Cloudinary credentials, then run `npm run build` and `npm --prefix server start` behind HTTPS. Restrict CORS to your exact client origin. To enable password recovery, configure the backend-only `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASS`, and `MAIL_FROM` values in `server/.env`; without these, the API reports that recovery email is not configured.
 
 ## Current architecture/API
 
