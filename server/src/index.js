@@ -19,7 +19,7 @@ import { registerSocketHandlers } from './sockets/handlers.js';
 if (!config.jwtSecret) {
   throw new Error('JWT_SECRET is required in server/.env');
 }
- 
+
 /* ------------------------------------------------------------------ */
 /*  Express application                                               */
 /* ------------------------------------------------------------------ */

@@ -9,7 +9,7 @@ export async function listInvitations(req, res) {
     invitedUser: req.user.id,
     status: 'pending',
   })
-    .populate('projectId', 'name thumbnail')
+    .populate('projectId', 'name thumbnail category')
     .populate('invitedBy', 'name username');
 
   res.json({ invitations });
