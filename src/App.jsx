@@ -408,6 +408,7 @@ export default function App() {
   };
 
   if (!authReady) return <div className="collabs-auth-gate-backdrop"><p>Checking your secure session…</p></div>;
+  if (new URLSearchParams(window.location.search).has('token') || new URLSearchParams(window.location.search).get('mode') === 'forgot') return <TeamAuthGate onAuthenticated={(user) => setAuthenticatedMember(user)} />;
   if (!authenticatedMember) return <TeamAuthGate onAuthenticated={(user) => { setAuthenticatedMember(user); setSelectedProject(null); }} />;
   if (authenticatedMember && !selectedProject) return <Dashboard user={authenticatedMember} onOpenProject={setSelectedProject} onLogout={async () => { await authService.logout(); setAuthenticatedMember(null); }} />;
   if (authenticatedMember && selectedProject) return <ProjectWorkspace user={authenticatedMember} project={selectedProject} onBack={() => setSelectedProject(null)} />;
