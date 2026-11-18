@@ -1,5 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { ArrowDown, ArrowUpRight, Bell, Check, ChevronDown, FolderKanban, LogOut, Plus, Search, Users, X } from 'lucide-react';
+import CreateProjectModal from '../projects/CreateProjectModal';
+import NotificationToast from '../../components/NotificationToast';
 
 const api = async (path, options = {}) => {
   const response = await fetch(`/api${path}`, {
@@ -11,7 +13,6 @@ const api = async (path, options = {}) => {
   if (!response.ok) throw new Error(data.error || 'Request failed');
   return data;
 };
-const INITIAL_FORM = { name: '', description: '', category: 'General', thumbnail: '' };
 const initials = (name = '') => name.trim().split(/\s+/).slice(0, 2).map(part => part[0]).join('').toUpperCase() || '?';
 const titleCase = value => value ? value[0].toUpperCase() + value.slice(1) : 'Member';
 
@@ -65,55 +66,27 @@ function ProjectCard({ project, onOpen }) {
   );
 }
 
-function CreateProjectModal({ form, setForm, onClose, onCreate, busy, error }) {
-  return (
-    <div className="create-project-overlay" onMouseDown={event => event.target === event.currentTarget && !busy && onClose()}>
-      <section className="create-project-modal" role="dialog" aria-modal="true" aria-labelledby="create-project-title">
-        <header className="create-modal-heading">
-          <div><span className="create-modal-icon"><Plus size={18} /></span><h2 id="create-project-title">Create a project</h2><p>Set up a shared space for your team.</p></div>
-          <button className="icon-button modal-close" type="button" onClick={onClose} disabled={busy} aria-label="Close dialog"><X size={18} /></button>
-        </header>
-        <form className="create-project-form" onSubmit={onCreate}>
-          <label className="dashboard-form-field">Project name <span className="required-mark">*</span>
-            <input autoFocus maxLength={100} required value={form.name} onChange={event => setForm(current => ({ ...current, name: event.target.value }))} placeholder="e.g. Mobile app redesign" />
-          </label>
-          <label className="dashboard-form-field">Description <span className="field-optional">Optional</span>
-            <textarea rows={3} maxLength={500} value={form.description} onChange={event => setForm(current => ({ ...current, description: event.target.value }))} placeholder="What is this project about?" />
-          </label>
-          <label className="dashboard-form-field">Category
-            <select value={form.category} onChange={event => setForm(current => ({ ...current, category: event.target.value }))}>
-              {['General', 'Product', 'Engineering', 'Design', 'Marketing', 'Research', 'Other'].map(category => <option key={category} value={category}>{category}</option>)}
-            </select>
-          </label>
-          <label className="dashboard-form-field">Cover image URL <span className="field-optional">Optional</span>
-            <input type="url" value={form.thumbnail} onChange={event => setForm(current => ({ ...current, thumbnail: event.target.value }))} placeholder="https://…" />
-          </label>
-          {error && <div className="dashboard-error" role="alert">{error}</div>}
-          <div className="create-modal-actions"><button className="dashboard-button secondary" type="button" onClick={onClose} disabled={busy}>Cancel</button><button className="dashboard-button primary" type="submit" disabled={busy || !form.name.trim()}>{busy ? 'Creating…' : <><Plus size={16} /> Create project</>}</button></div>
-        </form>
-      </section>
-    </div>
-  );
-}
-
 export default function Dashboard({ user, onLogout, onOpenProject }) {
   const [projects, setProjects] = useState([]);
   const [invitations, setInvitations] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [viewArchived, setViewArchived] = useState(false);
   const [query, setQuery] = useState('');
   const [searchOpen, setSearchOpen] = useState(false);
   const [error, setError] = useState('');
   const [actionError, setActionError] = useState('');
   const [showCreate, setShowCreate] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
-  const [busy, setBusy] = useState(false);
-  const [form, setForm] = useState(INITIAL_FORM);
+  const [toast, setToast] = useState(null);
   const firstName = user?.name?.trim().split(/\s+/)[0] || 'there';
 
   const refresh = async () => {
     setError('');
     try {
-      const [projectData, invitationData] = await Promise.all([api('/projects'), api('/invitations')]);
+      const [projectData, invitationData] = await Promise.all([
+        api(viewArchived ? '/projects?archived=true' : '/projects'),
+        api('/invitations')
+      ]);
       const projectList = await Promise.all(projectData.projects.map(async project => {
         try {
           const { members } = await api(`/projects/${project._id}/members`);
@@ -121,7 +94,7 @@ export default function Dashboard({ user, onLogout, onOpenProject }) {
         } catch { return { ...project, teamMembers: [] }; }
       }));
       setProjects(projectList);
-      setInvitations(invitationData.invitations);
+      setInvitations(invitationData.invitations || []);
     } catch (requestError) {
       setError(requestError.message);
     } finally {
@@ -129,7 +102,7 @@ export default function Dashboard({ user, onLogout, onOpenProject }) {
     }
   };
 
-  useEffect(() => { refresh(); }, []);
+  useEffect(() => { refresh(); }, [viewArchived]);
 
   const filteredProjects = useMemo(() => {
     const search = query.trim().toLowerCase();
@@ -137,26 +110,25 @@ export default function Dashboard({ user, onLogout, onOpenProject }) {
     return projects.filter(project => `${project.name} ${project.description || ''} ${project.category || ''}`.toLowerCase().includes(search));
   }, [projects, query]);
 
-  async function createProject(event) {
-    event.preventDefault();
-    setBusy(true);
-    setActionError('');
-    try {
-      const { project } = await api('/projects', { method: 'POST', body: JSON.stringify({ ...form, thumbnail: form.thumbnail.trim() || undefined }) });
-      setShowCreate(false);
-      setForm(INITIAL_FORM);
-      onOpenProject(project);
-    } catch (requestError) {
-      setActionError(requestError.message);
-    } finally {
-      setBusy(false);
-    }
-  }
+  const handleProjectCreated = async (createdProject, invitationsCount) => {
+    setShowCreate(false);
+    await refresh();
+    setToast({
+      type: 'success',
+      message: `Project "${createdProject.name}" created successfully!${
+        invitationsCount > 0 ? ` ${invitationsCount} contributor invitation${invitationsCount === 1 ? '' : 's'} sent.` : ''
+      }`
+    });
+  };
 
   async function respond(invitationId, status) {
     setActionError('');
     try {
       await api(`/invitations/${invitationId}/respond`, { method: 'POST', body: JSON.stringify({ status }) });
+      setToast({
+        type: 'success',
+        message: status === 'accepted' ? 'Project invitation accepted!' : 'Project invitation declined.'
+      });
       await refresh();
     } catch (requestError) { setActionError(requestError.message); }
   }
@@ -203,18 +175,56 @@ export default function Dashboard({ user, onLogout, onOpenProject }) {
         {invitations.length > 0 && <section className="dashboard-section invitations-section" id="pending-invitations">
           <div className="dashboard-section-heading"><div><h2>Pending invitations</h2><p>Project teams have invited you to collaborate.</p></div><span className="section-count">{invitations.length}</span></div>
           <div className="invitation-list">{invitations.map(invitation => <article className="invitation-card" key={invitation._id}>
-            <div className="invitation-project-mark"><FolderKanban size={19} /></div><div className="invitation-details"><h3>{invitation.projectId?.name || 'Project invitation'}</h3><p>Invited by <b>{invitation.invitedBy?.name || `@${invitation.invitedBy?.username || 'teammate'}`}</b></p><div><span>{invitation.projectId?.category || 'General'}</span></div></div>
+            <div className="invitation-project-mark"><FolderKanban size={19} /></div>
+            <div className="invitation-details">
+              <h3>{invitation.projectId?.name || 'Project invitation'}</h3>
+              <p>Invited by <b>{invitation.invitedBy?.name || `@${invitation.invitedBy?.username || 'teammate'}`}</b></p>
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+                <span>{invitation.projectId?.category || 'General'}</span>
+                {invitation.contributorRoleId?.name && (
+                  <span style={{ color: '#c4b5fd', fontSize: '10px' }}>
+                    Role: <b>{invitation.contributorRoleId.name}</b>
+                  </span>
+                )}
+              </div>
+            </div>
             <div className="invitation-actions"><button className="dashboard-button secondary" type="button" onClick={() => respond(invitation._id, 'rejected')}>Decline</button><button className="dashboard-button primary accept-button" type="button" onClick={() => respond(invitation._id, 'accepted')}><Check size={15} /> Accept</button></div>
           </article>)}</div>
         </section>}
 
         <section className="dashboard-section projects-section">
-          <div className="dashboard-section-heading"><div><h2>My Projects</h2><p>Projects you own and teams you’ve joined.</p></div><span className="section-count">{loading ? '—' : projects.length}</span></div>
+          <div className="dashboard-section-heading">
+            <div>
+              <h2>{viewArchived ? 'Archived Projects' : 'My Projects'}</h2>
+              <p>{viewArchived ? 'Preserved projects that have been archived.' : 'Projects you own and teams you’ve joined.'}</p>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <button
+                type="button"
+                className="dashboard-button secondary btn-compact"
+                onClick={() => setViewArchived((prev) => !prev)}
+                title={viewArchived ? 'Switch to active projects' : 'View archived projects'}
+              >
+                <span>{viewArchived ? 'View Active Projects' : 'Archived Projects'}</span>
+              </button>
+              <span className="section-count">{loading ? '—' : projects.length}</span>
+            </div>
+          </div>
           {loading ? <div className="project-loading-grid" aria-label="Loading projects"><span /><span /><span /></div> : filteredProjects.length > 0 ? <div className="my-projects-grid">{filteredProjects.map(project => <ProjectCard key={project._id} project={project} onOpen={onOpenProject} />)}</div> : query ? <div className="dashboard-no-results"><Search size={19} /><p>No projects match “{query}”.</p><button type="button" onClick={() => setQuery('')}>Clear search</button></div> : <div className="projects-empty-state"><div className="empty-illustration"><span /><span /><FolderKanban size={29} /></div><h3>No projects yet</h3><p>Start a project or join a team to collaborate.</p><button className="dashboard-button primary" type="button" onClick={() => setShowCreate(true)}><Plus size={16} /> Create your first project</button></div>}
         </section>
       </div>
 
-      {showCreate && <CreateProjectModal form={form} setForm={setForm} onClose={() => { if (!busy) setShowCreate(false); }} onCreate={createProject} busy={busy} error={actionError} />}
+      <CreateProjectModal
+        isOpen={showCreate}
+        onClose={() => setShowCreate(false)}
+        onProjectCreated={handleProjectCreated}
+        currentUser={user}
+      />
+
+      <NotificationToast
+        toast={toast}
+        onClose={() => setToast(null)}
+      />
     </main>
   );
 }

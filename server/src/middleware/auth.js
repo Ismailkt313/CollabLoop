@@ -77,3 +77,14 @@ export function requireManager(req, res, next) {
   }
   next();
 }
+
+/**
+ * Middleware that ensures `req.membership.projectRole` is strictly `"owner"`.
+ * Must be used after `requireMembership`.
+ */
+export function requireOwner(req, res, next) {
+  if (req.membership?.projectRole !== 'owner') {
+    return res.status(403).json({ error: 'Only the project owner can perform this action' });
+  }
+  next();
+}

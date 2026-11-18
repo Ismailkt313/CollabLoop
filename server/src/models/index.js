@@ -9,3 +9,4 @@ export { default as Channel } from './Channel.js';
 export { default as Message } from './Message.js';
 export { default as Resource } from './Resource.js';
 export { default as Document } from './Document.js';
+export { default as ContributorRole } from './ContributorRole.js';

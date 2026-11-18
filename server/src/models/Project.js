@@ -25,6 +25,10 @@ const projectSchema = new Schema(
     thumbnail: {
       type: String,
     },
+    thumbnailPublicId: {
+      type: String,
+      default: '',
+    },
     ownerId: {
       type: Schema.Types.ObjectId,
       ref: 'User',
@@ -34,6 +38,15 @@ const projectSchema = new Schema(
     category: {
       type: String,
       default: 'General',
+    },
+    isArchived: {
+      type: Boolean,
+      default: false,
+      index: true,
+    },
+    archivedAt: {
+      type: Date,
+      default: null,
     },
   },
   { timestamps: true }

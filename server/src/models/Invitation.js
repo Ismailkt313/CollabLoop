@@ -7,6 +7,7 @@ const { Schema, model } = mongoose;
  * @property {ObjectId} projectId   - The project the invitation is for
  * @property {ObjectId} invitedBy   - User who sent the invitation
  * @property {ObjectId} invitedUser - User who received the invitation
+ * @property {ObjectId} [contributorRoleId] - Assigned platform-wide contributor role
  * @property {string}   status      - Invitation state: pending | accepted | rejected
  * @property {Date}     [respondedAt] - When the invitee responded
  */
@@ -29,6 +30,10 @@ const invitationSchema = new Schema(
       required: true,
       index: true,
     },
+    contributorRoleId: {
+      type: Schema.Types.ObjectId,
+      ref: 'ContributorRole',
+    },
     status: {
       type: String,
       enum: ['pending', 'accepted', 'rejected'],
@@ -41,7 +46,6 @@ const invitationSchema = new Schema(
   { timestamps: true }
 );
 
-/** Fast lookup: pending invitations for a user within a project */
 invitationSchema.index({ projectId: 1, invitedUser: 1, status: 1 });
 
 const Invitation = model('Invitation', invitationSchema);

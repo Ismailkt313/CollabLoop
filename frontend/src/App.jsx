@@ -9,13 +9,13 @@ import UploadModal from './components/UploadModal';
 import DocsPillarView from './components/DocsPillarView';
 import DeleteConfirmModal from './components/DeleteConfirmModal';
 import NotificationToast from './components/NotificationToast';
-import ChatWidget from './components/ChatWidget';
 import TeamAuthGate from './components/TeamAuthGate';
 import Dashboard from './features/dashboard/Dashboard';
-import ProjectWorkspace from './features/projects/ProjectWorkspace';
+import ProjectDetailLanding from './features/projects/ProjectDetailLanding';
 import './features/dashboard/dashboard.css';
 import SwitchRoleModal from './components/SwitchRoleModal';
 import { authService } from './services/authService';
+import projectSocket from './services/projectSocket';
 import { CATEGORIES, INITIAL_REFERENCES } from './data/initialData';
 import {
   Sun,
@@ -33,6 +33,11 @@ import {
   X,
   Plus
 } from 'lucide-react';
+import {
+  parseProjectRoute,
+  pushProjectUrl,
+  replaceProjectUrl
+} from './utils/navigation';
 import {
   isCloudinaryConfigured,
   fetchAllCloudinaryMedia,
@@ -70,6 +75,99 @@ export default function App() {
   useEffect(() => { authService.current().then((user) => { setAuthenticatedMember(user); setAuthReady(true); }); }, []);
   const [isSwitchRoleModalOpen, setIsSwitchRoleModalOpen] = useState(false);
   const [selectedProject, setSelectedProject] = useState(null);
+
+  // Track whether we're loading a project from URL (refresh / direct link)
+  const initialRoute = parseProjectRoute();
+  const [urlProjectId, setUrlProjectId] = useState(() => initialRoute.projectId);
+  const [urlProjectLoading, setUrlProjectLoading] = useState(() => !!initialRoute.projectId);
+  const [urlProjectError, setUrlProjectError] = useState('');
+
+  /* ---- URL → project restore on auth ready ---- */
+  useEffect(() => {
+    if (!authReady || !authenticatedMember || !urlProjectId || selectedProject) return;
+    let cancelled = false;
+    setUrlProjectLoading(true);
+    setUrlProjectError('');
+
+    (async () => {
+      try {
+        const response = await fetch(`/api/projects/${urlProjectId}`, { credentials: 'include' });
+        if (cancelled) return;
+        if (response.status === 401) {
+          // Session expired — will fall through to auth gate
+          setUrlProjectId(null);
+          setUrlProjectLoading(false);
+          return;
+        }
+        if (response.status === 403) {
+          setUrlProjectError('You are not a member of this project.');
+          setUrlProjectLoading(false);
+          return;
+        }
+        if (response.status === 404 || !response.ok) {
+          setUrlProjectError('Project not found.');
+          setUrlProjectLoading(false);
+          return;
+        }
+        const data = await response.json();
+        if (cancelled) return;
+        const project = data.project || data;
+        setSelectedProject(project);
+        const currentRoute = parseProjectRoute();
+        replaceProjectUrl(project._id || project.id, currentRoute.roleId);
+      } catch {
+        if (!cancelled) {
+          setUrlProjectError('Network error. Could not load project.');
+        }
+      } finally {
+        if (!cancelled) setUrlProjectLoading(false);
+      }
+    })();
+
+    return () => { cancelled = true; };
+  }, [authReady, authenticatedMember, urlProjectId, selectedProject]);
+
+  /* ---- Sync URL when selectedProject changes via user clicks ---- */
+  const handleOpenProject = useCallback((project) => {
+    setSelectedProject(project);
+    setUrlProjectId(null);
+    setUrlProjectError('');
+    pushProjectUrl(project._id || project.id);
+  }, []);
+
+  const handleBackToDashboard = useCallback(() => {
+    setSelectedProject(null);
+    setUrlProjectId(null);
+    setUrlProjectError('');
+    pushProjectUrl(null);
+  }, []);
+
+  /* ---- Browser back/forward navigation ---- */
+  useEffect(() => {
+    const onPopState = () => {
+      const { projectId: id } = parseProjectRoute();
+      if (id) {
+        setUrlProjectId(id);
+        setSelectedProject((prev) => {
+          const prevId = prev?._id || prev?.id;
+          if (prevId === id) {
+            // Same project: sub-route (role detail <-> role listing) changed.
+            // Keep current project in state so sub-route transition is instant.
+            return prev;
+          }
+          setUrlProjectError('');
+          return null; // Different project: trigger project fetch
+        });
+      } else {
+        // Navigating back to dashboard
+        setSelectedProject(null);
+        setUrlProjectId(null);
+        setUrlProjectError('');
+      }
+    };
+    window.addEventListener('popstate', onPopState);
+    return () => window.removeEventListener('popstate', onPopState);
+  }, []);
 
   // Active Category: null = 3 Cards Main Page; 'b2b' | 'admin' | 'driver' = Category Gallery
   const [activeCategory, setActiveCategory] = useState(null);
@@ -417,8 +515,58 @@ export default function App() {
   }
   if (new URLSearchParams(window.location.search).has('token') || new URLSearchParams(window.location.search).get('mode') === 'forgot') return <TeamAuthGate onAuthenticated={(user) => setAuthenticatedMember(user)} />;
   if (!authenticatedMember) return <TeamAuthGate onAuthenticated={(user) => { setAuthenticatedMember(user); setSelectedProject(null); }} />;
-  if (authenticatedMember && !selectedProject) return <Dashboard user={authenticatedMember} onOpenProject={setSelectedProject} onLogout={async () => { await authService.logout(); setAuthenticatedMember(null); }} />;
-  if (authenticatedMember && selectedProject) return <ProjectWorkspace user={authenticatedMember} project={selectedProject} onBack={() => setSelectedProject(null)} />;
+
+  // URL-based project loading: show loading or error while fetching from URL
+  if (authenticatedMember && !selectedProject && (urlProjectLoading || urlProjectError)) {
+    return (
+      <div className="collabs-auth-gate-backdrop" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '16px', textAlign: 'center', padding: '24px' }}>
+        <img src="/collabloop-monogram.png" alt="CollabLoop" style={{ width: '52px', height: '52px', objectFit: 'contain' }} />
+        {urlProjectLoading ? (
+          <p style={{ color: 'var(--text-secondary, #a4a7b2)', fontSize: '14px', margin: 0 }}>Loading project…</p>
+        ) : (
+          <>
+            <p style={{ color: '#f87171', fontSize: '14px', margin: 0 }}>{urlProjectError}</p>
+            <div style={{ display: 'flex', gap: '10px', marginTop: '8px' }}>
+              <button
+                type="button"
+                onClick={() => { setUrlProjectError(''); setUrlProjectId(null); pushProjectUrl(null); }}
+                style={{ padding: '8px 18px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(255,255,255,0.08)', color: '#e2e8f0', cursor: 'pointer', fontSize: '13px' }}
+              >
+                Go to Dashboard
+              </button>
+              <button
+                type="button"
+                onClick={() => { setUrlProjectError(''); setUrlProjectLoading(true); setSelectedProject(null); /* triggers re-fetch */ }}
+                style={{ padding: '8px 18px', borderRadius: '8px', border: 'none', background: '#6366f1', color: '#fff', cursor: 'pointer', fontSize: '13px' }}
+              >
+                Retry
+              </button>
+            </div>
+          </>
+        )}
+      </div>
+    );
+  }
+
+  if (authenticatedMember && !selectedProject) return <Dashboard user={authenticatedMember} onOpenProject={handleOpenProject} onLogout={async () => { projectSocket.disconnect(); await authService.logout(); setAuthenticatedMember(null); replaceProjectUrl(null); }} />;
+  if (authenticatedMember && selectedProject) {
+    const currentRoute = parseProjectRoute();
+    return (
+      <ProjectDetailLanding
+        user={authenticatedMember}
+        project={selectedProject}
+        initialRoleId={currentRoute.roleId}
+        onBackToDashboard={handleBackToDashboard}
+        onLogout={async () => {
+          projectSocket.disconnect();
+          await authService.logout();
+          setAuthenticatedMember(null);
+          setSelectedProject(null);
+          replaceProjectUrl(null);
+        }}
+      />
+    );
+  }
 
   return (
     <div className="minimal-app">
@@ -769,16 +917,7 @@ export default function App() {
         defaultCategory={uploadModalCategory}
       />
 
-      {/* Floating Team Chat & Q&A Widget */}
-      {authenticatedMember && (
-        <ChatWidget
-          references={references}
-          activeCategory={activeCategory}
-          activeReference={selectedReference}
-          onOpenReference={(ref) => setSelectedReference(ref)}
-          onOpenDoc={() => setActiveCategory('docs')}
-        />
-      )}
+      {/* Legacy Team Chat (Migrated to ProjectChatWidget) */}
 
       {/* Team Access PIN Security Gate (Locks app for the 5 authorized roles) */}
       {!authenticatedMember && (

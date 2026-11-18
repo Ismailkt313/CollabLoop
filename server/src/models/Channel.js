@@ -30,6 +30,14 @@ const channelSchema = new Schema(
       ref: 'User',
       required: true,
     },
+    isDefault: {
+      type: Boolean,
+      default: false,
+    },
+    roleId: {
+      type: Schema.Types.ObjectId,
+      ref: 'ContributorRole',
+    },
   },
   { timestamps: true }
 );

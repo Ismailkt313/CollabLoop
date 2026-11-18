@@ -7,4 +7,4 @@ const router = Router();
 router.get('/', requireAuth, listInvitations);
 router.post('/:id/respond', requireAuth, respondToInvitation);
 
-export default router;
+export default router

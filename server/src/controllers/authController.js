@@ -129,9 +129,6 @@ export async function register(req, res, next) {
     if (!/^[a-z0-9_]{3,30}$/i.test(username)) {
       return res.status(400).json({ error: 'Username must be 3–30 letters, numbers, or underscores' });
     }
-    if (password.length < 10) {
-      return res.status(400).json({ error: 'Password must be at least 10 characters' });
-    }
 
     const normalizedUsername = username.toLowerCase();
 

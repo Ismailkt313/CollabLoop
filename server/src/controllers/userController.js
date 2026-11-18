@@ -26,23 +26,35 @@ export async function updateProfile(req, res, next) {
 
 /**
  * GET /users/search
- * Search for users by username prefix (min 2 chars).
+ * Search for registered users by username, email, or display name (min 2 chars).
+ * Excludes the requester.
  */
-export async function searchUsers(req, res) {
-  const term = String(req.query.q || '').replace(/^@/, '');
+export async function searchUsers(req, res, next) {
+  try {
+    const rawTerm = String(req.query.q || '').trim();
+    const term = rawTerm.replace(/^@/, '').trim();
 
-  if (term.length < 2) {
-    return res.json({ users: [] });
+    if (term.length < 2) {
+      return res.json({ users: [] });
+    }
+
+    const escapedTerm = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const regex = new RegExp(escapedTerm, 'i');
+
+    const users = await User.find({
+      _id: { $ne: req.user.id },
+      $or: [
+        { username: regex },
+        { email: regex },
+        { name: regex },
+      ],
+    })
+      .select('name username email avatar')
+      .sort({ createdAt: -1 })
+      .limit(10);
+
+    res.json({ users });
+  } catch (err) {
+    next(err);
   }
-
-  const escapedTerm = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-
-  const users = await User.find({
-    username: { $regex: '^' + escapedTerm, $options: 'i' },
-    _id: { $ne: req.user.id },
-  })
-    .select('name username avatar')
-    .limit(10);
-
-  res.json({ users });
 }

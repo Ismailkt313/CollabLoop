@@ -22,6 +22,12 @@ const resourceSchema = new Schema(
       required: true,
       index: true,
     },
+    roleId: {
+      type: Schema.Types.ObjectId,
+      ref: 'ContributorRole',
+      index: true,
+      default: null,
+    },
     uploadedBy: {
       type: Schema.Types.ObjectId,
       ref: 'User',
@@ -29,6 +35,12 @@ const resourceSchema = new Schema(
     },
     title: {
       type: String,
+      trim: true,
+    },
+    description: {
+      type: String,
+      default: '',
+      trim: true,
     },
     fileName: {
       type: String,
@@ -42,6 +54,10 @@ const resourceSchema = new Schema(
     },
     resourceType: {
       type: String,
+      default: 'image',
+    },
+    format: {
+      type: String,
     },
     category: {
       type: String,
@@ -49,12 +65,28 @@ const resourceSchema = new Schema(
     fileSize: {
       type: Number,
     },
+    width: {
+      type: Number,
+    },
+    height: {
+      type: Number,
+    },
+    duration: {
+      type: Number,
+    },
+    tags: [
+      {
+        type: String,
+        trim: true,
+      },
+    ],
   },
   { timestamps: true }
 );
 
-/** Latest resources first within a project */
+/** Latest resources first within a project and role */
 resourceSchema.index({ projectId: 1, createdAt: -1 });
+resourceSchema.index({ projectId: 1, roleId: 1, createdAt: -1 });
 
 const Resource = model('Resource', resourceSchema);
 

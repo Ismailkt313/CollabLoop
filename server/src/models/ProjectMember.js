@@ -8,6 +8,7 @@ const { Schema, model } = mongoose;
  * @property {ObjectId} userId       - Reference to the member User
  * @property {string}   projectRole  - Role within the project: owner | admin | member
  * @property {string}   teamFunction - Functional role label (e.g. Designer, Developer)
+ * @property {ObjectId} [contributorRoleId] - Reference to the platform ContributorRole
  * @property {string}   status       - Membership status: active | pending
  * @property {Date}     [joinedAt]   - When the member joined
  */
@@ -33,6 +34,10 @@ const memberSchema = new Schema(
     teamFunction: {
       type: String,
       default: 'Other',
+    },
+    contributorRoleId: {
+      type: Schema.Types.ObjectId,
+      ref: 'ContributorRole',
     },
     status: {
       type: String,

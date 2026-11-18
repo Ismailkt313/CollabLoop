@@ -1,0 +1,997 @@
+/* ==========================================================================
+   CollabLoop — Project Settings Modal CSS
+   Apple Dark Theme, High-Precision Spacing & Responsive Structure
+   ========================================================================== */
+
+/* ── 1. Modal Overlay & Shell ────────────────────────────────────────────── */
+.ps-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  background-color: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  animation: psFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes psFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.ps-modal-shell {
+  background: #111216;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 18px;
+  width: 100%;
+  max-width: 960px;
+  height: 90vh;
+  max-height: 720px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.7), 0 0 1px 1px rgba(255, 255, 255, 0.05);
+}
+
+/* ── 2. Topbar ───────────────────────────────────────────────────────────── */
+.ps-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 24px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  background: #14151b;
+}
+
+.ps-topbar-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.ps-topbar-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: rgba(41, 151, 255, 0.12);
+  color: #2997ff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ps-topbar-title h2 {
+  font-size: 16px;
+  font-weight: 600;
+  color: #f5f5f7;
+  margin: 0;
+  line-height: 1.2;
+}
+
+.ps-topbar-title p {
+  font-size: 12px;
+  color: #86868b;
+  margin: 2px 0 0 0;
+}
+
+.ps-close-btn {
+  background: transparent;
+  border: none;
+  color: #86868b;
+  cursor: pointer;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+}
+
+.ps-close-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #f5f5f7;
+}
+
+/* ── 3. Toast Alert ──────────────────────────────────────────────────────── */
+.ps-toast {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 18px;
+  font-size: 13px;
+  font-weight: 500;
+  border-bottom: 1px solid transparent;
+  animation: psSlideDown 0.2s ease;
+}
+
+@keyframes psSlideDown {
+  from { transform: translateY(-10px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.ps-toast-success {
+  background: rgba(16, 185, 129, 0.12);
+  border-color: rgba(16, 185, 129, 0.25);
+  color: #34d399;
+}
+
+.ps-toast-error {
+  background: rgba(239, 68, 68, 0.12);
+  border-color: rgba(239, 68, 68, 0.25);
+  color: #f87171;
+}
+
+.ps-toast span {
+  flex: 1;
+}
+
+.ps-toast button {
+  background: transparent;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+  opacity: 0.7;
+}
+
+.ps-toast button:hover {
+  opacity: 1;
+}
+
+/* ── 4. Body (Sidebar + Main) ────────────────────────────────────────────── */
+.ps-body {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+
+.ps-sidebar {
+  width: 220px;
+  background: #13141a;
+  border-right: 1px solid rgba(255, 255, 255, 0.06);
+  padding: 16px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  overflow-y: auto;
+}
+
+.ps-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border-radius: 8px;
+  background: transparent;
+  border: none;
+  color: #8b8d98;
+  font-size: 13px;
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  width: 100%;
+}
+
+.ps-nav-item:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: #f5f5f7;
+}
+
+.ps-nav-item.is-active {
+  background: rgba(41, 151, 255, 0.14);
+  color: #2997ff;
+}
+
+.ps-nav-item.is-danger-tab:hover {
+  background: rgba(239, 68, 68, 0.12);
+  color: #f87171;
+}
+
+.ps-nav-item.is-danger-tab.is-active {
+  background: rgba(239, 68, 68, 0.16);
+  color: #f87171;
+}
+
+.ps-nav-label {
+  flex: 1;
+}
+
+.ps-nav-badge {
+  font-size: 11px;
+  padding: 2px 7px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #a4a7b2;
+}
+
+.ps-nav-item.is-active .ps-nav-badge {
+  background: rgba(41, 151, 255, 0.25);
+  color: #70baff;
+}
+
+/* ── 5. Main Content Viewport ────────────────────────────────────────────── */
+.ps-main-viewport {
+  flex: 1;
+  padding: 24px 32px;
+  overflow-y: auto;
+  background: #0f1014;
+}
+
+.ps-section-pane {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.ps-pane-header {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  padding-bottom: 14px;
+}
+
+.ps-pane-header h3 {
+  font-size: 17px;
+  font-weight: 600;
+  color: #f5f5f7;
+  margin: 0;
+}
+
+.ps-pane-header p {
+  font-size: 13px;
+  color: #86868b;
+  margin: 4px 0 0 0;
+}
+
+.ps-pane-header-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+/* ── 6. Form Components ─────────────────────────────────────────────────── */
+.ps-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ps-form-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: #d1d5db;
+}
+
+.ps-required {
+  color: #ef4444;
+}
+
+.ps-form-hint {
+  font-size: 12px;
+  color: #86868b;
+  margin: 0 0 6px 0;
+}
+
+.ps-input,
+.ps-select,
+.ps-textarea {
+  background: #16181f;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 9px;
+  padding: 10px 14px;
+  font-size: 13.5px;
+  color: #f5f5f7;
+  outline: none;
+  transition: all 0.15s ease;
+  font-family: inherit;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.ps-input:focus,
+.ps-select:focus,
+.ps-textarea:focus {
+  border-color: #2997ff;
+  box-shadow: 0 0 0 3px rgba(41, 151, 255, 0.2);
+}
+
+.ps-input-danger {
+  border-color: rgba(239, 68, 68, 0.5);
+}
+
+.ps-input-danger:focus {
+  border-color: #ef4444;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.2);
+}
+
+.ps-textarea {
+  resize: vertical;
+}
+
+.ps-form-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 10px;
+}
+
+/* ── 7. Search Box ───────────────────────────────────────────────────────── */
+.ps-search-box {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.ps-search-icon {
+  position: absolute;
+  left: 12px;
+  color: #86868b;
+  pointer-events: none;
+}
+
+.ps-search-input {
+  width: 100%;
+  background: #16181f;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 9px;
+  padding: 8px 36px 8px 36px;
+  font-size: 13px;
+  color: #f5f5f7;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.ps-search-input:focus {
+  border-color: #2997ff;
+}
+
+.ps-search-clear {
+  position: absolute;
+  right: 10px;
+  background: transparent;
+  border: none;
+  color: #86868b;
+  cursor: pointer;
+}
+
+/* ── 8. Table Styling ────────────────────────────────────────────────────── */
+.ps-table-container {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  overflow: hidden;
+  background: #14151b;
+}
+
+.ps-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 13px;
+}
+
+.ps-table th {
+  padding: 10px 14px;
+  background: #16181f;
+  color: #86868b;
+  font-weight: 500;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.ps-table td {
+  padding: 12px 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  color: #e5e7eb;
+}
+
+.ps-table tr:last-child td {
+  border-bottom: none;
+}
+
+.ps-text-right {
+  text-align: right;
+}
+
+.ps-text-center {
+  text-align: center;
+}
+
+.ps-text-muted {
+  color: #86868b;
+}
+
+.ps-user-cell {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.ps-user-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #252836;
+  color: #2997ff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 600;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.ps-user-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.ps-user-meta {
+  display: flex;
+  flex-direction: column;
+}
+
+.ps-user-name {
+  font-weight: 500;
+  color: #f5f5f7;
+}
+
+.ps-me-tag {
+  font-size: 11px;
+  color: #2997ff;
+  font-weight: normal;
+}
+
+.ps-user-handle {
+  font-size: 11.5px;
+  color: #86868b;
+}
+
+.ps-perm-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 9px;
+  border-radius: 12px;
+  font-size: 11.5px;
+  font-weight: 600;
+}
+
+.ps-perm-badge.owner {
+  background: rgba(245, 158, 11, 0.15);
+  color: #fbbf24;
+}
+
+.ps-perm-badge.admin {
+  background: rgba(41, 151, 255, 0.15);
+  color: #60a5fa;
+}
+
+.ps-perm-badge.member {
+  background: rgba(255, 255, 255, 0.08);
+  color: #a4a7b2;
+}
+
+.ps-role-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border-radius: 8px;
+  background: #1c1d24;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  font-size: 12px;
+}
+
+.ps-role-chip-img {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.ps-action-btn-group {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.ps-inline-btn {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-size: 12px;
+  color: #d1d5db;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.ps-inline-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #f5f5f7;
+}
+
+.ps-btn-danger:hover {
+  background: rgba(239, 68, 68, 0.2);
+  color: #f87171;
+  border-color: rgba(239, 68, 68, 0.3);
+}
+
+.ps-status-badge {
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-size: 11px;
+  text-transform: capitalize;
+  font-weight: 600;
+}
+
+.ps-status-badge.pending {
+  background: rgba(245, 158, 11, 0.15);
+  color: #fbbf24;
+}
+
+.ps-status-badge.accepted {
+  background: rgba(16, 185, 129, 0.15);
+  color: #34d399;
+}
+
+.ps-status-badge.rejected {
+  background: rgba(239, 68, 68, 0.15);
+  color: #f87171;
+}
+
+.ps-filter-pills {
+  display: flex;
+  gap: 8px;
+}
+
+.ps-filter-pill {
+  background: #16181f;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+  padding: 5px 14px;
+  font-size: 12px;
+  color: #86868b;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.ps-filter-pill:hover {
+  color: #f5f5f7;
+}
+
+.ps-filter-pill.is-active {
+  background: rgba(41, 151, 255, 0.15);
+  border-color: rgba(41, 151, 255, 0.3);
+  color: #2997ff;
+}
+
+/* ── 9. Roles Grid ───────────────────────────────────────────────────────── */
+.ps-roles-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 14px;
+}
+
+.ps-role-card {
+  background: #14151b;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.ps-role-card-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.ps-role-avatar-wrap {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background: #1d1e26;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.ps-role-avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.ps-role-avatar-fallback {
+  color: #2997ff;
+}
+
+.ps-role-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #f5f5f7;
+  margin: 0;
+}
+
+.ps-role-counts {
+  font-size: 11.5px;
+  color: #86868b;
+}
+
+.ps-role-desc {
+  font-size: 12px;
+  color: #a4a7b2;
+  margin: 0;
+  line-height: 1.4;
+  flex: 1;
+}
+
+.ps-role-assigned-users {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  padding-top: 8px;
+  font-size: 11.5px;
+  color: #86868b;
+}
+
+.ps-avatar-stack {
+  display: flex;
+  align-items: center;
+}
+
+.ps-stack-avatar {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #252836;
+  border: 1.5px solid #14151b;
+  margin-left: -6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 9px;
+  color: #70baff;
+  overflow: hidden;
+}
+
+.ps-stack-avatar:first-child {
+  margin-left: 0;
+}
+
+.ps-stack-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.ps-no-contributors {
+  color: #636674;
+  font-size: 11px;
+}
+
+/* ── 10. Permissions Hierarchy Card & Matrix ─────────────────────────────── */
+.ps-perm-hierarchy-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #14151b;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 16px;
+}
+
+.ps-hierarchy-level {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.ps-level-badge {
+  font-size: 12px;
+  font-weight: 600;
+  color: #2997ff;
+}
+
+.ps-hierarchy-level p {
+  font-size: 11.5px;
+  color: #86868b;
+  margin: 0;
+}
+
+.ps-hierarchy-arrow {
+  color: #636674;
+  font-size: 18px;
+}
+
+.ps-perm-matrix {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  overflow: hidden;
+  background: #14151b;
+}
+
+.ps-check-ok {
+  color: #34d399;
+}
+
+.ps-check-no {
+  color: #6b7280;
+}
+
+/* ── 11. Danger / Lifecycle Panels ───────────────────────────────────────── */
+.ps-danger-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  background: #14151b;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 18px 22px;
+}
+
+.ps-danger-card.is-destructive {
+  border-color: rgba(239, 68, 68, 0.25);
+  background: rgba(239, 68, 68, 0.03);
+}
+
+.ps-danger-info h4 {
+  font-size: 14.5px;
+  font-weight: 600;
+  color: #f5f5f7;
+  margin: 0;
+}
+
+.ps-danger-card.is-destructive .ps-danger-info h4 {
+  color: #f87171;
+}
+
+.ps-danger-info p {
+  font-size: 12.5px;
+  color: #86868b;
+  margin: 4px 0 0 0;
+  line-height: 1.4;
+}
+
+.ps-notice-box {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 10px;
+  color: #86868b;
+  font-size: 12.5px;
+}
+
+/* ── 12. Nested Sub-Modals ───────────────────────────────────────────────── */
+.ps-nested-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1300;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.ps-nested-modal {
+  background: #15161c;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 14px;
+  width: 100%;
+  max-width: 460px;
+  overflow: hidden;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.7);
+}
+
+.ps-nested-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  background: #181a22;
+}
+
+.ps-nested-header h4 {
+  font-size: 14.5px;
+  font-weight: 600;
+  color: #f5f5f7;
+  margin: 0;
+}
+
+.ps-nested-header button {
+  background: transparent;
+  border: none;
+  color: #86868b;
+  cursor: pointer;
+}
+
+.ps-nested-body {
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.ps-nested-desc {
+  font-size: 12.5px;
+  color: #a4a7b2;
+  margin: 0;
+  line-height: 1.4;
+}
+
+.ps-nested-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.ps-radio-options {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ps-radio-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: #181921;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.ps-radio-option:hover {
+  background: #1d1e28;
+}
+
+.ps-radio-option.is-selected {
+  border-color: #2997ff;
+  background: rgba(41, 151, 255, 0.08);
+}
+
+.ps-radio-option.is-owner-opt.is-selected {
+  border-color: #f59e0b;
+  background: rgba(245, 158, 11, 0.08);
+}
+
+.ps-radio-option input {
+  margin-top: 3px;
+}
+
+.ps-radio-option b {
+  display: block;
+  font-size: 13px;
+  color: #f5f5f7;
+}
+
+.ps-radio-option p {
+  font-size: 11.5px;
+  color: #86868b;
+  margin: 2px 0 0 0;
+}
+
+.ps-warn-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ps-warn-icon {
+  color: #f59e0b;
+}
+
+.ps-danger-icon {
+  color: #ef4444;
+}
+
+.ps-confirm-prompt {
+  font-size: 12.5px;
+  color: #d1d5db;
+  margin: 0;
+}
+
+.ps-code-match {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: monospace;
+  color: #f87171;
+}
+
+.ps-empty-pane {
+  padding: 24px;
+  text-align: center;
+  color: #86868b;
+  font-size: 13px;
+}
+
+/* ── 13. Responsive Breakpoints ──────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .ps-modal-shell {
+    height: 100dvh;
+    max-height: 100dvh;
+    border-radius: 0;
+    border: none;
+  }
+
+  .ps-body {
+    flex-direction: column;
+  }
+
+  .ps-sidebar {
+    width: 100%;
+    flex-direction: row;
+    border-right: none;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    padding: 8px 12px;
+    gap: 6px;
+  }
+
+  .ps-nav-item {
+    white-space: nowrap;
+    padding: 7px 10px;
+    font-size: 12px;
+  }
+
+  .ps-main-viewport {
+    padding: 16px;
+  }
+
+  .ps-danger-card {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .ps-perm-hierarchy-card {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .ps-hierarchy-arrow {
+    transform: rotate(90deg);
+    margin-left: 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .ps-topbar {
+    padding: 12px 16px;
+  }
+
+  .ps-topbar-title h2 {
+    font-size: 15px;
+  }
+
+  .ps-table th:nth-child(4),
+  .ps-table td:nth-child(4) {
+    display: none; /* Hide date column on mobile */
+  }
+}

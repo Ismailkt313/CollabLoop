@@ -21,6 +21,12 @@ const documentSchema = new Schema(
       required: true,
       index: true,
     },
+    roleId: {
+      type: Schema.Types.ObjectId,
+      ref: 'ContributorRole',
+      index: true,
+      default: null,
+    },
     uploadedBy: {
       type: Schema.Types.ObjectId,
       ref: 'User',
@@ -29,6 +35,15 @@ const documentSchema = new Schema(
     title: {
       type: String,
       required: true,
+      trim: true,
+    },
+    description: {
+      type: String,
+      default: '',
+      trim: true,
+    },
+    fileName: {
+      type: String,
     },
     content: {
       type: String,
@@ -38,6 +53,7 @@ const documentSchema = new Schema(
     },
     format: {
       type: String,
+      default: 'markdown',
     },
     fileUrl: {
       type: String,
@@ -45,9 +61,22 @@ const documentSchema = new Schema(
     publicId: {
       type: String,
     },
+    fileSize: {
+      type: Number,
+    },
+    tags: [
+      {
+        type: String,
+        trim: true,
+      },
+    ],
   },
   { timestamps: true }
 );
+
+/** Latest documents first within a project and role */
+documentSchema.index({ projectId: 1, createdAt: -1 });
+documentSchema.index({ projectId: 1, roleId: 1, createdAt: -1 });
 
 const Document = model('Document', documentSchema);
 

@@ -95,15 +95,20 @@ class ChatService {
       this.initMqtt();
     }
 
-    // 3. Cloudinary background sync (backfills history from cloud)
+    // 3. Cloudinary background sync (backfills history from cloud if Resource List is enabled)
     if (typeof window !== 'undefined') {
+      this.cloudSyncDisabled = false;
       this.fetchRemoteMessages();
       this.pollInterval = setInterval(() => {
-        this.fetchRemoteMessages();
-      }, 5000);
+        if (!this.cloudSyncDisabled) {
+          this.fetchRemoteMessages();
+        }
+      }, 30000); // 30s fallback rather than aggressive 5s
 
       window.addEventListener('focus', () => {
-        this.fetchRemoteMessages();
+        if (!this.cloudSyncDisabled) {
+          this.fetchRemoteMessages();
+        }
         if (!this.isMqttConnected) {
           this.connectMqtt();
         }
@@ -300,7 +305,7 @@ class ChatService {
 
   // Fetch messages from global Cloudinary CDN tag list (backfill for missed history)
   async fetchRemoteMessages() {
-    if (this.isSyncing) return;
+    if (this.isSyncing || this.cloudSyncDisabled) return;
     this.isSyncing = true;
 
     try {
@@ -310,14 +315,23 @@ class ChatService {
         headers: {
           'Accept': 'application/json'
         }
-      });
+      }).catch(() => null);
 
-      if (!res.ok) {
+      if (!res || !res.ok) {
+        // If Cloudinary returns 401 Unauthorized or 404, Resource list is disabled in dashboard.
+        // Disable further requests to avoid console error spam.
+        if (!res || res.status === 401 || res.status === 403 || res.status === 404) {
+          this.cloudSyncDisabled = true;
+          if (this.pollInterval) {
+            clearInterval(this.pollInterval);
+            this.pollInterval = null;
+          }
+        }
         this.isSyncing = false;
         return;
       }
 
-      const data = await res.json();
+      const data = await res.json().catch(() => null);
       const resources = Array.isArray(data?.resources) ? data.resources : [];
 
       if (resources.length === 0) {

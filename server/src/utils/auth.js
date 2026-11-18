@@ -1,6 +1,7 @@
 import crypto from 'node:crypto';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import config from '../config/index.js';
 
 /**
  * Cookie configuration for the session token.
@@ -8,8 +9,8 @@ import jwt from 'jsonwebtoken';
  */
 export const cookieOptions = {
   httpOnly: true,
-  secure: process.env.COOKIE_SECURE === 'true',
-  sameSite: 'lax',
+  secure: config.cookieSecure,
+  sameSite: config.cookieSameSite,
   path: '/',
   maxAge: 7 * 864e5, // 7 days
 };

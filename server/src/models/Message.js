@@ -50,14 +50,38 @@ const messageSchema = new Schema(
     },
     messageType: {
       type: String,
-      default: 'text',
+      default: 'text', // 'text' | 'voice' | 'file' | 'system'
     },
+    isEdited: {
+      type: Boolean,
+      default: false,
+    },
+    editedAt: {
+      type: Date,
+    },
+    isDeleted: {
+      type: Boolean,
+      default: false,
+    },
+    readBy: [
+      {
+        user: {
+          type: Schema.Types.ObjectId,
+          ref: 'User',
+        },
+        readAt: {
+          type: Date,
+          default: Date.now,
+        },
+      },
+    ],
   },
   { timestamps: true }
 );
 
-/** Chronological message retrieval per channel */
+/** Chronological and reverse message retrieval per channel */
 messageSchema.index({ projectId: 1, channelId: 1, createdAt: 1 });
+messageSchema.index({ projectId: 1, channelId: 1, createdAt: -1 });
 
 const Message = model('Message', messageSchema);
 

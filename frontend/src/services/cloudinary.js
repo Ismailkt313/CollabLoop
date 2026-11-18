@@ -13,6 +13,275 @@ export const isCloudinaryConfigured = () => {
 export const getCloudinaryCloudName = () => CLOUD_NAME;
 
 /**
+ * Uploads a chat attachment (image, document, or audio voice note) using project-scoped backend signing.
+ * Falls back to unsigned upload preset if backend signing is unavailable.
+ */
+export async function uploadChatAttachment(file, { projectId, title = '', resourceType = 'auto' } = {}) {
+  try {
+    const signRes = await fetch(`/api/projects/${projectId}/chat/upload-signature?type=chat`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type: 'chat' }),
+    });
+
+    if (signRes.ok) {
+      const signData = await signRes.json();
+      if (signData.cloudName && signData.apiKey && signData.signature) {
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('api_key', signData.apiKey);
+        formData.append('timestamp', signData.timestamp);
+        formData.append('signature', signData.signature);
+        formData.append('folder', signData.folder);
+
+        if (title) {
+          const cleanTitle = title.replace(/[|;=]/g, ' ').trim();
+          formData.append('context', `caption=${cleanTitle}|title=${cleanTitle}`);
+        }
+
+        const isAudioOrRaw =
+          file.type.startsWith('audio/') ||
+          file.name?.match(/\.(mp3|wav|ogg|m4a|webm|pdf|docx|txt|md)$/i);
+        const endpointType = isAudioOrRaw && !file.type.startsWith('image/') ? 'auto' : 'auto';
+
+        const uploadUrl = `https://api.cloudinary.com/v1_1/${signData.cloudName}/${endpointType}/upload`;
+        const res = await fetch(uploadUrl, {
+          method: 'POST',
+          body: formData,
+        });
+
+        const data = await res.json();
+        if (res.ok) {
+          const secureUrl = (data.secure_url || data.url || '').replace(/^http:\/\//i, 'https://');
+          return {
+            url: secureUrl,
+            publicId: data.public_id,
+            resourceType: data.resource_type || (file.type.startsWith('image/') ? 'image' : file.type.startsWith('audio/') ? 'voice' : 'file'),
+            format: data.format || file.name?.split('.').pop(),
+            fileName: file.name || (file.type.startsWith('audio/') ? 'voice_message.webm' : 'attachment'),
+            fileSize: data.bytes || file.size,
+            duration: data.duration,
+            width: data.width,
+            height: data.height,
+          };
+        } else {
+          console.warn('[Cloudinary] Backend signed chat upload error:', data.error?.message);
+        }
+      }
+    }
+  } catch (err) {
+    console.warn('[Cloudinary] Backend signed chat upload failed, falling back:', err);
+  }
+
+  // Graceful fallback
+  if (file.type.startsWith('image/')) {
+    const res = await uploadMediaToCloudinary(file, { category: 'chat', title });
+    return {
+      url: res.url,
+      publicId: res.publicId,
+      resourceType: 'image',
+      format: res.format,
+      fileName: file.name,
+      fileSize: file.size,
+      width: res.width,
+      height: res.height,
+    };
+  }
+
+  const docRes = await uploadDocToCloudinary(file, { title });
+  return {
+    url: docRes.url,
+    publicId: docRes.publicId,
+    resourceType: file.type.startsWith('audio/') ? 'voice' : 'file',
+    format: docRes.format,
+    fileName: file.name || 'attachment',
+    fileSize: docRes.bytes || file.size,
+  };
+}
+
+/**
+ * Uploads media (images/videos) scoped to a project role workspace using backend signing.
+ * Falls back to unsigned upload preset if backend signing is unavailable.
+ */
+export async function uploadRoleMedia(file, { projectId, roleId, title = '' } = {}) {
+  try {
+    const signRes = await fetch(`/api/projects/${projectId}/workspaces/${encodeURIComponent(roleId)}/resources/upload-signature?type=media`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type: 'media' }),
+    });
+
+    if (signRes.ok) {
+      const signData = await signRes.json();
+      if (signData.cloudName && signData.apiKey && signData.signature) {
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('api_key', signData.apiKey);
+        formData.append('timestamp', signData.timestamp);
+        formData.append('signature', signData.signature);
+        formData.append('folder', signData.folder);
+
+        if (title) {
+          const cleanTitle = title.replace(/[|;=]/g, ' ').trim();
+          formData.append('context', `caption=${cleanTitle}|title=${cleanTitle}`);
+        }
+
+        const uploadUrl = `https://api.cloudinary.com/v1_1/${signData.cloudName}/auto/upload`;
+        const res = await fetch(uploadUrl, {
+          method: 'POST',
+          body: formData,
+        });
+
+        const data = await res.json();
+        if (res.ok) {
+          const secureUrl = (data.secure_url || data.url || '').replace(/^http:\/\//i, 'https://');
+          return {
+            url: secureUrl,
+            publicId: data.public_id,
+            resourceType: data.resource_type || (file.type.startsWith('video/') ? 'video' : 'image'),
+            width: data.width,
+            height: data.height,
+            format: data.format,
+            duration: data.duration,
+            bytes: data.bytes || file.size,
+          };
+        } else {
+          console.warn('[Cloudinary] Backend signed role media upload error:', data.error?.message);
+        }
+      }
+    }
+  } catch (err) {
+    console.warn('[Cloudinary] Backend signed role media upload failed, falling back:', err);
+  }
+
+  return uploadMediaToCloudinary(file, { category: 'media', title });
+}
+
+/**
+ * Uploads a document (.pdf, .docx, .md, .txt) scoped to a project role workspace using backend signing.
+ * Falls back to unsigned upload preset if backend signing is unavailable.
+ */
+export async function uploadRoleDocument(file, { projectId, roleId, title = '' } = {}) {
+  const ext = (file.name || '').split('.').pop()?.toLowerCase() || '';
+
+  try {
+    const signRes = await fetch(`/api/projects/${projectId}/workspaces/${encodeURIComponent(roleId)}/documents/upload-signature?type=documents`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type: 'documents' }),
+    });
+
+    if (signRes.ok) {
+      const signData = await signRes.json();
+      if (signData.cloudName && signData.apiKey && signData.signature) {
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('api_key', signData.apiKey);
+        formData.append('timestamp', signData.timestamp);
+        formData.append('signature', signData.signature);
+        formData.append('folder', signData.folder);
+
+        if (title) {
+          const cleanTitle = title.replace(/[|;=]/g, ' ').trim();
+          formData.append('context', `caption=${cleanTitle}|title=${cleanTitle}`);
+        }
+
+        // Try auto/upload first, then raw/upload if needed
+        let res = await fetch(`https://api.cloudinary.com/v1_1/${signData.cloudName}/auto/upload`, {
+          method: 'POST',
+          body: formData,
+        });
+
+        let data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          // Retry with raw
+          res = await fetch(`https://api.cloudinary.com/v1_1/${signData.cloudName}/raw/upload`, {
+            method: 'POST',
+            body: formData,
+          });
+          data = await res.json().catch(() => ({}));
+        }
+
+        if (res.ok) {
+          const secureUrl = (data.secure_url || data.url || '').replace(/^http:\/\//i, 'https://');
+          return {
+            url: secureUrl,
+            publicId: data.public_id,
+            resourceType: data.resource_type || (ext === 'pdf' ? 'image' : 'raw'),
+            format: data.format || ext,
+            pages: data.pages || 1,
+            bytes: data.bytes || file.size,
+          };
+        } else {
+          console.warn('[Cloudinary] Backend signed role document upload error:', data.error?.message);
+        }
+      }
+    }
+  } catch (err) {
+    console.warn('[Cloudinary] Backend signed role document upload failed, falling back:', err);
+  }
+
+  return uploadDocToCloudinary(file, { title });
+}
+
+/**
+ * Uploads media using backend-authorized upload signing (no API secret in client).
+ * Falls back to unsigned upload preset if backend signing is unavailable.
+ * @param {File} file - Image file
+ * @param {Object} options - { folder, projectId }
+ * @returns {Promise<{ url: string, publicId: string, resourceType: string }>}
+ */
+export async function uploadSignedMedia(file, { folder = 'collabloop/general', projectId } = {}) {
+  try {
+    const signUrl = projectId ? `/api/projects/${projectId}/uploads/sign` : '/api/uploads/sign';
+    const signRes = await fetch(signUrl, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ folder }),
+    });
+
+    if (signRes.ok) {
+      const signData = await signRes.json();
+      if (signData.cloudName && signData.apiKey && signData.signature) {
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('api_key', signData.apiKey);
+        formData.append('timestamp', signData.timestamp);
+        formData.append('signature', signData.signature);
+        formData.append('folder', signData.folder);
+
+        const uploadUrl = `https://api.cloudinary.com/v1_1/${signData.cloudName}/auto/upload`;
+        const res = await fetch(uploadUrl, {
+          method: 'POST',
+          body: formData,
+        });
+
+        const data = await res.json();
+        if (res.ok) {
+          const secureUrl = (data.secure_url || data.url || '').replace(/^http:\/\//i, 'https://');
+          return {
+            url: secureUrl,
+            publicId: data.public_id,
+            resourceType: data.resource_type || 'image',
+          };
+        } else {
+          console.warn('[Cloudinary] Backend signed upload returned error:', data.error?.message);
+        }
+      }
+    }
+  } catch (err) {
+    console.warn('[Cloudinary] Backend signed upload failed:', err);
+  }
+
+  // Graceful fallback to client preset if available
+  return uploadMediaToCloudinary(file, { category: folder.split('/').pop() || 'general' });
+}
+
+/**
  * Uploads an image or video file to Cloudinary using unsigned upload preset.
  * Supports auto detection (images, videos, animated gifs).
  * @param {File} file - Image or Video file
