@@ -13,49 +13,36 @@ import routes from './routes/index.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { registerSocketHandlers } from './sockets/handlers.js';
 
-/* ------------------------------------------------------------------ */
-/*  Validate runtime configuration                                     */
-/* ------------------------------------------------------------------ */
 
 validateConfig();
 
-/* ------------------------------------------------------------------ */
-/*  Express application & HTTP server                                 */
-/* ------------------------------------------------------------------ */
 
 const app = express();
 const server = http.createServer(app);
 
-/* ---- Rate Limiters ----------------------------------------------- */
-
-// General API rate limiter (protects against volumetric abuse)
 const generalLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
+  windowMs: 15 * 60 * 1000, 
   limit: 1000,
   standardHeaders: 'draft-8',
   legacyHeaders: false,
   message: { error: 'Too many requests, please try again later.' },
 });
 
-// Stricter rate limiter for sensitive authentication endpoints
 const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  limit: 25, // 25 attempts per 15 minutes per IP
+  windowMs: 15 * 60 * 1000, 
+  limit: 25, 
   standardHeaders: 'draft-8',
   legacyHeaders: false,
   message: { error: 'Too many authentication attempts, please try again later.' },
 });
 
-/* ---- Security & Parser Middleware -------------------------------- */
 
 app.use(helmet());
 
-// Multi-origin CORS support
 const allowedOrigins = config.clientOrigin.split(',').map((o) => o.trim());
 app.use(
   cors({
     origin: (origin, callback) => {
-      // Allow requests with no origin (like mobile apps, curl, or same-origin)
       if (!origin || allowedOrigins.includes(origin)) {
         return callback(null, true);
       }
@@ -68,7 +55,6 @@ app.use(
 app.use(express.json({ limit: '2mb' }));
 app.use(cookieParser());
 
-/* ---- Health & Readiness Check ------------------------------------ */
 
 app.get('/api/health', (_req, res) => {
   const isDbReady = mongoose.connection.readyState === 1;
@@ -94,13 +80,10 @@ app.use('/api/auth/register', authLimiter);
 app.use('/api/auth/forgot-password', authLimiter);
 app.use('/api/auth/reset-password', authLimiter);
 
-// General limiter on other API routes
 app.use('/api', generalLimiter);
 
-// Main API routes
 app.use('/api', routes);
 
-/* ---- Error Handling ---------------------------------------------- */
 
 app.use(errorHandler);
 

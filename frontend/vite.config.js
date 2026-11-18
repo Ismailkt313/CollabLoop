@@ -1,28 +1,34 @@
 import react from '@vitejs/plugin-react'
-import { defineConfig } from 'vite'
+import { defineConfig, loadEnv } from 'vite'
 
 // https://vite.dev/config/
-export default defineConfig({
-  plugins: [react()],
-  server: {
-    port: 2345,
-    host: true,
-    allowedHosts: true,
-    proxy: {
-      '/api': { target: 'http://127.0.0.1:5000', changeOrigin: true },
-      '/socket.io': { target: 'http://127.0.0.1:5000', ws: true }
-    }
-  },
-  build: {
-    rollupOptions: {
-      output: {
-        manualChunks: {
-          'vendor-react': ['react', 'react-dom'],
-          'vendor-icons': ['lucide-react'],
-          'vendor-docs': ['mammoth', 'marked'],
-          'vendor-realtime': ['socket.io-client', 'paho-mqtt'],
+export default defineConfig(({ mode }) => {
+  const env = loadEnv(mode, process.cwd(), '');
+  const backendUrl = env.VITE_BACKEND_URL || env.BACKEND_URL || 'http://localhost:5000';
+  const port = parseInt(env.VITE_PORT || env.PORT || '2345', 10);
+
+  return {
+    plugins: [react()],
+    server: {
+      port,
+      host: true,
+      allowedHosts: true,
+      proxy: {
+        '/api': { target: backendUrl, changeOrigin: true },
+        '/socket.io': { target: backendUrl, ws: true }
+      }
+    },
+    build: {
+      rollupOptions: {
+        output: {
+          manualChunks: {
+            'vendor-react': ['react', 'react-dom'],
+            'vendor-icons': ['lucide-react'],
+            'vendor-docs': ['mammoth', 'marked'],
+            'vendor-realtime': ['socket.io-client', 'paho-mqtt'],
+          }
         }
       }
     }
-  }
-})
+  };
+});

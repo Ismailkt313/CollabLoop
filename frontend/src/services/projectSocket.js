@@ -16,8 +16,9 @@ class ProjectSocketService {
       return this.socket;
     }
 
-    // Connect to same origin
-    this.socket = io({
+    // Connect to backend server (or same origin via Vite proxy in development)
+    const socketUrl = import.meta.env.VITE_SOCKET_URL || (import.meta.env.PROD && import.meta.env.VITE_BACKEND_URL ? import.meta.env.VITE_BACKEND_URL : undefined);
+    this.socket = io(socketUrl || undefined, {
       withCredentials: true,
       transports: ['websocket', 'polling'],
       reconnectionAttempts: 10,
