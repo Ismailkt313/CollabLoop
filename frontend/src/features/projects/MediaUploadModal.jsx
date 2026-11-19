@@ -11,6 +11,7 @@ import {
   CheckCircle2,
 } from 'lucide-react';
 import { uploadRoleMedia } from '../../services/cloudinary';
+import { buildApiUrl } from '../../services/apiConfig';
 
 const ACCEPTED_IMAGE_TYPES = [
   'image/png',
@@ -195,7 +196,7 @@ export default function MediaUploadModal({
         .filter(Boolean);
 
       // 3. Post resource metadata to backend
-      const res = await fetch(`/api/projects/${projectId}/workspaces/${encodeURIComponent(roleId)}/resources`, {
+      const res = await fetch(buildApiUrl(`/projects/${projectId}/workspaces/${encodeURIComponent(roleId)}/resources`), {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },

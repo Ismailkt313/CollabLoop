@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { uploadRoleDocument } from '../../services/cloudinary';
 import { parseDocFile } from '../../services/docParser';
+import { buildApiUrl } from '../../services/apiConfig';
 
 const ACCEPTED_EXTENSIONS = ['pdf', 'docx', 'md', 'markdown', 'txt'];
 const MAX_DOC_SIZE_BYTES = 50 * 1024 * 1024; // 50MB
@@ -178,7 +179,7 @@ export default function DocumentUploadModal({
       else if (ext === 'pdf') format = 'pdf';
 
       // 2. Post document metadata to backend
-      const res = await fetch(`/api/projects/${projectId}/workspaces/${encodeURIComponent(roleId)}/documents`, {
+      const res = await fetch(buildApiUrl(`/projects/${projectId}/workspaces/${encodeURIComponent(roleId)}/documents`), {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },

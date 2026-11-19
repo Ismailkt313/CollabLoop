@@ -87,13 +87,8 @@ app.use('/api', routes);
 
 app.use(errorHandler);
 
-/* ---- Realtime Socket.IO Handlers --------------------------------- */
 
 registerSocketHandlers(server, config);
-
-/* ------------------------------------------------------------------ */
-/*  Database Lifecycle & Server Startup                               */
-/* ------------------------------------------------------------------ */
 
 // Listen to Mongoose connection lifecycle events
 mongoose.connection.on('error', (err) => {

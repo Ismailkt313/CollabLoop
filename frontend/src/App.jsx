@@ -15,6 +15,7 @@ import ProjectDetailLanding from './features/projects/ProjectDetailLanding';
 import './features/dashboard/dashboard.css';
 import SwitchRoleModal from './components/SwitchRoleModal';
 import { authService } from './services/authService';
+import { buildApiUrl } from './services/apiConfig';
 import projectSocket from './services/projectSocket';
 import { CATEGORIES, INITIAL_REFERENCES } from './data/initialData';
 import {
@@ -91,7 +92,7 @@ export default function App() {
 
     (async () => {
       try {
-        const response = await fetch(`/api/projects/${urlProjectId}`, { credentials: 'include' });
+        const response = await fetch(buildApiUrl(`/projects/${urlProjectId}`), { credentials: 'include' });
         if (cancelled) return;
         if (response.status === 401) {
           // Session expired — will fall through to auth gate

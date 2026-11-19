@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Search, X, User, Check, RefreshCw, Mail } from 'lucide-react';
+import { buildApiUrl } from '../../services/apiConfig';
 
 const api = async (path) => {
-  const res = await fetch(`/api${path}`, {
+  const res = await fetch(buildApiUrl(path), {
     credentials: 'include',
     headers: { 'Content-Type': 'application/json' },
   });

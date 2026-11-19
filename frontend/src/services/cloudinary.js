@@ -1,3 +1,5 @@
+import { buildApiUrl } from './apiConfig.js';
+
 const CLOUD_NAME = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_CLOUDINARY_CLOUD_NAME) || 'dtaz4vhxh';
 const UPLOAD_PRESET = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_CLOUDINARY_UPLOAD_PRESET) || 'CollabS';
 
@@ -18,7 +20,7 @@ export const getCloudinaryCloudName = () => CLOUD_NAME;
  */
 export async function uploadChatAttachment(file, { projectId, title = '', resourceType = 'auto' } = {}) {
   try {
-    const signRes = await fetch(`/api/projects/${projectId}/chat/upload-signature?type=chat`, {
+    const signRes = await fetch(buildApiUrl(`/projects/${projectId}/chat/upload-signature?type=chat`), {
       method: 'POST',
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
@@ -106,7 +108,7 @@ export async function uploadChatAttachment(file, { projectId, title = '', resour
  */
 export async function uploadRoleMedia(file, { projectId, roleId, title = '' } = {}) {
   try {
-    const signRes = await fetch(`/api/projects/${projectId}/workspaces/${encodeURIComponent(roleId)}/resources/upload-signature?type=media`, {
+    const signRes = await fetch(buildApiUrl(`/projects/${projectId}/workspaces/${encodeURIComponent(roleId)}/resources/upload-signature?type=media`), {
       method: 'POST',
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
@@ -167,7 +169,7 @@ export async function uploadRoleDocument(file, { projectId, roleId, title = '' }
   const ext = (file.name || '').split('.').pop()?.toLowerCase() || '';
 
   try {
-    const signRes = await fetch(`/api/projects/${projectId}/workspaces/${encodeURIComponent(roleId)}/documents/upload-signature?type=documents`, {
+    const signRes = await fetch(buildApiUrl(`/projects/${projectId}/workspaces/${encodeURIComponent(roleId)}/documents/upload-signature?type=documents`), {
       method: 'POST',
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
@@ -236,7 +238,7 @@ export async function uploadRoleDocument(file, { projectId, roleId, title = '' }
  */
 export async function uploadSignedMedia(file, { folder = 'collabloop/general', projectId } = {}) {
   try {
-    const signUrl = projectId ? `/api/projects/${projectId}/uploads/sign` : '/api/uploads/sign';
+    const signUrl = buildApiUrl(projectId ? `/projects/${projectId}/uploads/sign` : '/uploads/sign');
     const signRes = await fetch(signUrl, {
       method: 'POST',
       credentials: 'include',

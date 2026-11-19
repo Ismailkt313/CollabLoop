@@ -1,9 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { X, Plus, Shield, RefreshCw, Upload, Image as ImageIcon } from 'lucide-react';
 import { uploadSignedMedia } from '../../services/cloudinary';
+import { buildApiUrl } from '../../services/apiConfig';
 
 const api = async (path, options = {}) => {
-  const response = await fetch(`/api${path}`, {
+  const response = await fetch(buildApiUrl(path), {
     credentials: 'include',
     headers: { 'Content-Type': 'application/json', ...(options.headers || {}) },
     ...options,

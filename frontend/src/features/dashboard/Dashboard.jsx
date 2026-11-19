@@ -2,9 +2,10 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { ArrowDown, ArrowUpRight, Bell, Check, ChevronDown, FolderKanban, LogOut, Plus, Search, Users, X } from 'lucide-react';
 import CreateProjectModal from '../projects/CreateProjectModal';
 import NotificationToast from '../../components/NotificationToast';
+import { buildApiUrl } from '../../services/apiConfig';
 
 const api = async (path, options = {}) => {
-  const response = await fetch(`/api${path}`, {
+  const response = await fetch(buildApiUrl(path), {
     credentials: 'include',
     headers: { 'Content-Type': 'application/json', ...(options.headers || {}) },
     ...options

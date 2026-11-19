@@ -30,7 +30,7 @@ const config = Object.freeze({
   cookieSecure: process.env.COOKIE_SECURE === 'true' || (isProduction && process.env.COOKIE_SECURE !== 'false'),
 
   /** @type {string} Cookie SameSite policy ('lax', 'strict', 'none') */
-  cookieSameSite: process.env.COOKIE_SAMESITE || (isProduction ? 'lax' : 'lax'),
+  cookieSameSite: process.env.COOKIE_SAMESITE || (isProduction ? 'none' : 'lax'),
 
   /** @type {{ host?: string, port: number, secure: boolean, user?: string, pass?: string, from?: string }} SMTP email configuration */
   smtp: {

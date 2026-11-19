@@ -25,10 +25,11 @@ import ProjectThumbnailUpload from './ProjectThumbnailUpload';
 import ContributorSearchInput from './ContributorSearchInput';
 import RoleDropdown from './RoleDropdown';
 import CreateRoleModal from './CreateRoleModal';
+import { buildApiUrl } from '../../services/apiConfig';
 import './ProjectSettings.css';
 
 const api = async (path, options = {}) => {
-  const response = await fetch(`/api${path}`, {
+  const response = await fetch(buildApiUrl(path), {
     credentials: 'include',
     headers: { 'Content-Type': 'application/json', ...(options.headers || {}) },
     ...options,

@@ -22,10 +22,11 @@ import CreateProjectModal from './CreateProjectModal';
 import ProjectChatWidget from '../chat/ProjectChatWidget';
 import ProjectSettingsModal from './ProjectSettingsModal';
 import { parseProjectRoute, pushProjectUrl } from '../../utils/navigation';
+import { buildApiUrl } from '../../services/apiConfig';
 import './ProjectDetail.css';
 
 const api = async (path, options = {}) => {
-  const response = await fetch(`/api${path}`, {
+  const response = await fetch(buildApiUrl(path), {
     credentials: 'include',
     headers: { 'Content-Type': 'application/json', ...(options.headers || {}) },
     ...options,
