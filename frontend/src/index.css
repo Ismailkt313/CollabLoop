@@ -1,131 +1,135 @@
-/* Apple Human Interface Guidelines - Inspired Design System */
+/* ==========================================================================
+   CollabLoop Centralized Design System
+   Three-Color Principle: Pure White (#FFFFFF), Burgundy (#800020), Warm Ivory (#F4F0EA)
+   ========================================================================== */
 
 :root {
-  /* Apple Light Mode Palette */
-  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Plus Jakarta Sans", "Inter", -apple-system, sans-serif;
-  --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  /* Typography Fonts */
+  --font-sans: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
 
-  /* Surfaces */
-  --bg-primary: #F5F5F7;
-  --bg-canvas: #FFFFFF;
-  --bg-elevated: #FFFFFF;
-  --bg-secondary: #EBEBED;
-  --bg-tertiary: #E3E3E8;
-  --bg-translucent: rgba(255, 255, 255, 0.85);
-  --bg-translucent-heavy: rgba(245, 245, 247, 0.92);
+  /* --------------------------------------------------------------------------
+     Core 3-Color Brand Palette
+     -------------------------------------------------------------------------- */
+  /* 1. Primary: Pure White */
+  --color-white: #FFFFFF;
+  --color-background: #FFFFFF;
+  --color-surface: #FFFFFF;
+  --color-surface-translucent: rgba(255, 255, 255, 0.92);
+  --color-surface-overlay: rgba(43, 10, 18, 0.45);
 
-  /* Hairline Borders */
-  --border-subtle: rgba(0, 0, 0, 0.07);
-  --border-medium: rgba(0, 0, 0, 0.12);
-  --border-strong: rgba(0, 0, 0, 0.20);
+  /* 2. Secondary: Burgundy */
+  --color-brand: #800020;
+  --color-brand-hover: #660019;
+  --color-brand-active: #4D0013;
+  --color-brand-light: #990026;
+  --color-brand-subtle: rgba(128, 0, 32, 0.08);
+  --color-brand-muted: rgba(128, 0, 32, 0.14);
+  --color-brand-border: rgba(128, 0, 32, 0.22);
+  --color-focus: #800020;
 
-  /* Typography */
-  --text-primary: #1D1D1F;
-  --text-secondary: #6E6E73;
-  --text-tertiary: #86868B;
-  --text-quaternary: #A1A1A6;
-  --text-inverted: #FFFFFF;
+  /* 3. Supporting: Warm Ivory */
+  --color-surface-secondary: #F4F0EA;
+  --color-surface-tertiary: #EDE8DF;
+  --color-ivory: #F4F0EA;
+  --color-ivory-dark: #ECE5DA;
 
-  /* Apple System Accents (Refined, Non-Neon) */
-  --accent-blue: #0071E3;
-  --accent-blue-hover: #0077ED;
-  --accent-blue-subtle: rgba(0, 113, 227, 0.08);
-  --accent-blue-border: rgba(0, 113, 227, 0.25);
-  
-  --accent-indigo: #5856D6;
-  --accent-indigo-subtle: rgba(88, 86, 214, 0.08);
-  --accent-indigo-border: rgba(88, 86, 214, 0.22);
+  /* Typography (Deep Burgundy-Tinted for optimal contrast & WCAG AA readability) */
+  --color-text-primary: #2B0A12;
+  --color-text-secondary: #5C3D46;
+  --color-text-tertiary: #8A6E76;
+  --color-text-quaternary: #A8959A;
+  --color-text-inverted: #FFFFFF;
 
-  --accent-teal: #0A8491;
-  --accent-teal-subtle: rgba(10, 132, 145, 0.08);
-  --accent-teal-border: rgba(10, 132, 145, 0.22);
+  /* Borders & Dividers (Warm Ivory Shades) */
+  --color-border: #E5DFD5;
+  --color-border-subtle: #EFEAE2;
+  --color-border-strong: #D6CEC2;
 
-  --accent-green: #248A3D;
-  --accent-green-subtle: rgba(36, 138, 61, 0.08);
-  --accent-green-border: rgba(36, 138, 61, 0.22);
+  /* Restrained Semantic Status Colors (Non-brand functional indicators) */
+  --color-error: #B91C1C;
+  --color-error-hover: #991B1B;
+  --color-error-bg: #FEF2F2;
+  --color-error-border: #FECACA;
 
-  --accent-red: #D70015;
-  --accent-red-subtle: rgba(215, 0, 21, 0.08);
-  --accent-red-border: rgba(215, 0, 21, 0.22);
+  --color-success: #15803D;
+  --color-success-bg: #F0FDF4;
+  --color-success-border: #BBF7D0;
 
-  --accent-amber: #B25E00;
-  --accent-amber-subtle: rgba(178, 94, 0, 0.08);
-  --accent-amber-border: rgba(178, 94, 0, 0.22);
+  --color-warning: #B45309;
+  --color-warning-bg: #FFFBEB;
+  --color-warning-border: #FDE68A;
 
-  /* Natural Apple Shadows (Soft diffusion, no neon glow) */
-  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.03);
-  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.03);
-  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.05), 0 1px 3px rgba(0, 0, 0, 0.04);
-  --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.08), 0 2px 6px rgba(0, 0, 0, 0.04);
-  --shadow-modal: 0 24px 60px rgba(0, 0, 0, 0.16), 0 4px 12px rgba(0, 0, 0, 0.06);
+  /* Refined Warm Diffuse Shadows */
+  --shadow-xs: 0 1px 2px rgba(43, 10, 18, 0.04);
+  --shadow-sm: 0 1px 3px rgba(43, 10, 18, 0.06), 0 1px 2px rgba(43, 10, 18, 0.03);
+  --shadow-md: 0 4px 14px rgba(43, 10, 18, 0.06), 0 1px 3px rgba(43, 10, 18, 0.04);
+  --shadow-lg: 0 12px 32px rgba(43, 10, 18, 0.08), 0 2px 6px rgba(43, 10, 18, 0.04);
+  --shadow-modal: 0 20px 50px rgba(43, 10, 18, 0.16), 0 4px 12px rgba(43, 10, 18, 0.06);
 
   /* Radii */
   --radius-sm: 6px;
   --radius-md: 10px;
-  --radius-lg: 16px;
-  --radius-xl: 22px;
+  --radius-lg: 14px;
+  --radius-xl: 20px;
   --radius-pill: 9999px;
 
-  /* Transitions */
-  --ease-apple: cubic-bezier(0.16, 1, 0.3, 1);
-  --transition-fast: 150ms var(--ease-apple);
-  --transition-normal: 250ms var(--ease-apple);
-  --transition-slow: 400ms var(--ease-apple);
+  /* Smooth Transitions */
+  --ease-spring: cubic-bezier(0.16, 1, 0.3, 1);
+  --transition-fast: 150ms var(--ease-spring);
+  --transition-normal: 250ms var(--ease-spring);
+  --transition-slow: 400ms var(--ease-spring);
+
+  /* --------------------------------------------------------------------------
+     Unified Component Aliases
+     -------------------------------------------------------------------------- */
+  --bg-primary: var(--color-background);
+  --bg-canvas: var(--color-surface);
+  --bg-elevated: var(--color-surface);
+  --bg-secondary: var(--color-surface-secondary);
+  --bg-tertiary: var(--color-surface-tertiary);
+  --bg-translucent: var(--color-surface-translucent);
+  --bg-translucent-heavy: rgba(255, 255, 255, 0.96);
+
+  --border-subtle: var(--color-border-subtle);
+  --border-medium: var(--color-border);
+  --border-strong: var(--color-border-strong);
+
+  --text-primary: var(--color-text-primary);
+  --text-secondary: var(--color-text-secondary);
+  --text-tertiary: var(--color-text-tertiary);
+  --text-quaternary: var(--color-text-quaternary);
+  --text-inverted: var(--color-text-inverted);
+
+  --accent-blue: var(--color-brand);
+  --accent-blue-hover: var(--color-brand-hover);
+  --accent-blue-subtle: var(--color-brand-subtle);
+  --accent-blue-border: var(--color-brand-border);
+
+  --accent-indigo: var(--color-brand);
+  --accent-indigo-subtle: var(--color-brand-subtle);
+  --accent-indigo-border: var(--color-brand-border);
+
+  --accent-teal: var(--color-brand);
+  --accent-teal-subtle: var(--color-brand-subtle);
+  --accent-teal-border: var(--color-brand-border);
+
+  --accent-green: var(--color-success);
+  --accent-green-subtle: var(--color-success-bg);
+  --accent-green-border: var(--color-success-border);
+
+  --accent-red: var(--color-error);
+  --accent-red-subtle: var(--color-error-bg);
+  --accent-red-border: var(--color-error-border);
+
+  --accent-amber: var(--color-warning);
+  --accent-amber-subtle: var(--color-warning-bg);
+  --accent-amber-border: var(--color-warning-border);
 }
 
-/* Dark Mode Tokens */
-.dark-theme {
-  --bg-primary: #000000;
-  --bg-canvas: #121214;
-  --bg-elevated: #1C1C1E;
-  --bg-secondary: #242426;
-  --bg-tertiary: #2C2C2E;
-  --bg-translucent: rgba(18, 18, 20, 0.85);
-  --bg-translucent-heavy: rgba(10, 10, 12, 0.92);
-
-  --border-subtle: rgba(255, 255, 255, 0.08);
-  --border-medium: rgba(255, 255, 255, 0.14);
-  --border-strong: rgba(255, 255, 255, 0.24);
-
-  --text-primary: #F5F5F7;
-  --text-secondary: #A1A1A6;
-  --text-tertiary: #7C7C82;
-  --text-quaternary: #545458;
-  --text-inverted: #000000;
-
-  --accent-blue: #2997FF;
-  --accent-blue-hover: #409CFF;
-  --accent-blue-subtle: rgba(41, 151, 255, 0.12);
-  --accent-blue-border: rgba(41, 151, 255, 0.30);
-
-  --accent-indigo: #7D7AFF;
-  --accent-indigo-subtle: rgba(125, 122, 255, 0.12);
-  --accent-indigo-border: rgba(125, 122, 255, 0.30);
-
-  --accent-teal: #40C8D6;
-  --accent-teal-subtle: rgba(64, 200, 214, 0.12);
-  --accent-teal-border: rgba(64, 200, 214, 0.30);
-
-  --accent-green: #30D158;
-  --accent-green-subtle: rgba(48, 209, 88, 0.12);
-  --accent-green-border: rgba(48, 209, 88, 0.30);
-
-  --accent-red: #FF453A;
-  --accent-red-subtle: rgba(255, 69, 58, 0.12);
-  --accent-red-border: rgba(255, 69, 58, 0.30);
-
-  --accent-amber: #FF9F0A;
-  --accent-amber-subtle: rgba(255, 159, 10, 0.12);
-  --accent-amber-border: rgba(255, 159, 10, 0.30);
-
-  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.35);
-  --shadow-sm: 0 2px 6px rgba(0, 0, 0, 0.45);
-  --shadow-md: 0 6px 18px rgba(0, 0, 0, 0.55);
-  --shadow-lg: 0 16px 36px rgba(0, 0, 0, 0.65);
-  --shadow-modal: 0 28px 70px rgba(0, 0, 0, 0.85);
-}
-
-/* Base Reset & Typography */
+/* --------------------------------------------------------------------------
+   Base Reset & Global Typography
+   -------------------------------------------------------------------------- */
 *, *::before, *::after {
   box-sizing: border-box;
   margin: 0;
@@ -138,15 +142,15 @@ html {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
+  background-color: var(--color-background);
 }
 
 body {
   font-family: var(--font-sans);
-  background-color: var(--bg-primary);
-  color: var(--text-primary);
+  background-color: var(--color-background);
+  color: var(--color-text-primary);
   min-height: 100vh;
   overflow-x: hidden;
-  transition: background-color var(--transition-normal), color var(--transition-normal);
 }
 
 /* Custom Clean Scrollbar */
@@ -155,19 +159,19 @@ body {
   height: 8px;
 }
 ::-webkit-scrollbar-track {
-  background: transparent;
+  background: var(--color-surface-secondary);
 }
 ::-webkit-scrollbar-thumb {
-  background: var(--border-medium);
-  border-radius: 9999px;
+  background: var(--color-border-strong);
+  border-radius: var(--radius-pill);
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--border-strong);
+  background: var(--color-brand-muted);
 }
 
-/* Accessible focus ring */
+/* Accessible focus ring in Burgundy */
 :focus-visible {
-  outline: 2px solid var(--accent-blue);
+  outline: 2px solid var(--color-brand);
   outline-offset: 2px;
 }
 
@@ -181,7 +185,7 @@ button {
 input, textarea, select {
   font-family: inherit;
   font-size: inherit;
-  color: inherit;
+  color: var(--color-text-primary);
 }
 
 /* App container */
@@ -189,6 +193,7 @@ input, textarea, select {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  background-color: var(--color-background);
 }
 
 .main-content {
@@ -205,11 +210,12 @@ input, textarea, select {
   }
 }
 
-/* Glassmorphism Surface Utility */
+/* Glassmorphism Clean Surface Utility */
 .apple-glass {
-  background: var(--bg-translucent);
-  backdrop-filter: blur(24px) saturate(180%);
-  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  background: var(--color-surface-translucent);
+  backdrop-filter: blur(20px) saturate(160%);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+  border-bottom: 1px solid var(--color-border);
 }
 
 /* Smooth Interactive Pill & Buttons */
@@ -224,27 +230,46 @@ input, textarea, select {
   font-weight: 500;
   transition: all var(--transition-fast);
   text-decoration: none;
+  cursor: pointer;
 }
 
 .apple-pill-btn.primary {
-  background-color: var(--accent-blue);
-  color: #FFFFFF;
-  box-shadow: 0 1px 3px rgba(0, 113, 227, 0.25);
+  background-color: var(--color-brand);
+  color: var(--color-text-inverted);
+  box-shadow: 0 1px 3px rgba(128, 0, 32, 0.25);
+  border: 1px solid transparent;
 }
 
 .apple-pill-btn.primary:hover {
-  background-color: var(--accent-blue-hover);
+  background-color: var(--color-brand-hover);
   transform: translateY(-1px);
+  box-shadow: 0 3px 8px rgba(128, 0, 32, 0.32);
+}
+
+.apple-pill-btn.primary:active {
+  background-color: var(--color-brand-active);
+  transform: translateY(0);
 }
 
 .apple-pill-btn.secondary {
-  background-color: var(--bg-canvas);
-  color: var(--text-primary);
-  border: 1px solid var(--border-subtle);
+  background-color: var(--color-surface-secondary);
+  color: var(--color-brand);
+  border: 1px solid var(--color-border);
   box-shadow: var(--shadow-xs);
+  font-weight: 600;
 }
 
 .apple-pill-btn.secondary:hover {
-  background-color: var(--bg-secondary);
-  border-color: var(--border-medium);
+  background-color: var(--color-surface-tertiary);
+  border-color: var(--color-border-strong);
+}
+
+.apple-pill-btn.outlined {
+  background-color: var(--color-white);
+  color: var(--color-brand);
+  border: 1px solid var(--color-brand);
+}
+
+.apple-pill-btn.outlined:hover {
+  background-color: var(--color-brand-subtle);
 }

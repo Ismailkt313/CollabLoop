@@ -8,7 +8,7 @@
   position: fixed;
   inset: 0;
   z-index: 1200;
-  background-color: rgba(0, 0, 0, 0.75);
+  background-color: var(--color-surface-overlay, rgba(43, 10, 18, 0.45));
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   display: flex;
@@ -24,8 +24,8 @@
 }
 
 .ps-modal-shell {
-  background: #111216;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--color-surface, #FFFFFF);
+  border: 1px solid var(--color-border, #E5DFD5);
   border-radius: 18px;
   width: 100%;
   max-width: 960px;
@@ -34,7 +34,7 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.7), 0 0 1px 1px rgba(255, 255, 255, 0.05);
+  box-shadow: var(--shadow-modal);
 }
 
 /* ── 2. Topbar ───────────────────────────────────────────────────────────── */
@@ -43,8 +43,8 @@
   align-items: center;
   justify-content: space-between;
   padding: 16px 24px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
-  background: #14151b;
+  border-bottom: 1px solid var(--color-border, #E5DFD5);
+  background: var(--color-surface-secondary, #F4F0EA);
 }
 
 .ps-topbar-title {
@@ -57,8 +57,8 @@
   width: 36px;
   height: 36px;
   border-radius: 10px;
-  background: rgba(41, 151, 255, 0.12);
-  color: #2997ff;
+  background: var(--color-brand-subtle, rgba(128, 0, 32, 0.08));
+  color: var(--color-brand, #800020);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -67,21 +67,21 @@
 .ps-topbar-title h2 {
   font-size: 16px;
   font-weight: 600;
-  color: #f5f5f7;
+  color: var(--color-text-primary, #2B0A12);
   margin: 0;
   line-height: 1.2;
 }
 
 .ps-topbar-title p {
   font-size: 12px;
-  color: #86868b;
+  color: var(--color-text-secondary, #5C3D46);
   margin: 2px 0 0 0;
 }
 
 .ps-close-btn {
   background: transparent;
   border: none;
-  color: #86868b;
+  color: var(--color-text-secondary, #5C3D46);
   cursor: pointer;
   width: 32px;
   height: 32px;
@@ -94,7 +94,7 @@
 
 .ps-close-btn:hover {
   background: rgba(255, 255, 255, 0.08);
-  color: #f5f5f7;
+  color: var(--color-text-primary, #2B0A12);
 }
 
 /* ── 3. Toast Alert ──────────────────────────────────────────────────────── */
@@ -151,8 +151,8 @@
 
 .ps-sidebar {
   width: 220px;
-  background: #13141a;
-  border-right: 1px solid rgba(255, 255, 255, 0.06);
+  background: var(--color-surface-secondary, #F4F0EA);
+  border-right: 1px solid var(--color-border, #E5DFD5);
   padding: 16px 10px;
   display: flex;
   flex-direction: column;
@@ -168,7 +168,7 @@
   border-radius: 8px;
   background: transparent;
   border: none;
-  color: #8b8d98;
+  color: var(--color-text-secondary, #5C3D46);
   font-size: 13px;
   font-weight: 500;
   text-align: left;
@@ -178,13 +178,13 @@
 }
 
 .ps-nav-item:hover {
-  background: rgba(255, 255, 255, 0.05);
-  color: #f5f5f7;
+  background: var(--color-surface-tertiary, #EDE8DF);
+  color: var(--color-text-primary, #2B0A12);
 }
 
 .ps-nav-item.is-active {
-  background: rgba(41, 151, 255, 0.14);
-  color: #2997ff;
+  background: var(--color-surface, #FFFFFF); box-shadow: 0 1px 3px rgba(43, 10, 18, 0.04);
+  color: var(--color-brand, #800020);
 }
 
 .ps-nav-item.is-danger-tab:hover {
@@ -206,12 +206,12 @@
   padding: 2px 7px;
   border-radius: 10px;
   background: rgba(255, 255, 255, 0.08);
-  color: #a4a7b2;
+  color: var(--color-text-secondary, #5C3D46);
 }
 
 .ps-nav-item.is-active .ps-nav-badge {
-  background: rgba(41, 151, 255, 0.25);
-  color: #70baff;
+  background: rgba(128, 0, 32, 0.12);
+  color: var(--color-brand, #800020);
 }
 
 /* ── 5. Main Content Viewport ────────────────────────────────────────────── */
@@ -219,7 +219,7 @@
   flex: 1;
   padding: 24px 32px;
   overflow-y: auto;
-  background: #0f1014;
+  background: var(--color-surface, #FFFFFF);
 }
 
 .ps-section-pane {
@@ -229,20 +229,20 @@
 }
 
 .ps-pane-header {
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  border-bottom: 1px solid var(--color-border, #E5DFD5);
   padding-bottom: 14px;
 }
 
 .ps-pane-header h3 {
   font-size: 17px;
   font-weight: 600;
-  color: #f5f5f7;
+  color: var(--color-text-primary, #2B0A12);
   margin: 0;
 }
 
 .ps-pane-header p {
   font-size: 13px;
-  color: #86868b;
+  color: var(--color-text-secondary, #5C3D46);
   margin: 4px 0 0 0;
 }
 
@@ -263,7 +263,7 @@
 .ps-form-label {
   font-size: 13px;
   font-weight: 500;
-  color: #d1d5db;
+  color: var(--color-text-primary, #2B0A12);
 }
 
 .ps-required {
@@ -272,19 +272,19 @@
 
 .ps-form-hint {
   font-size: 12px;
-  color: #86868b;
+  color: var(--color-text-secondary, #5C3D46);
   margin: 0 0 6px 0;
 }
 
 .ps-input,
 .ps-select,
 .ps-textarea {
-  background: #16181f;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: var(--color-surface-secondary, #F4F0EA);
+  border: 1px solid var(--color-border, #E5DFD5);
   border-radius: 9px;
   padding: 10px 14px;
   font-size: 13.5px;
-  color: #f5f5f7;
+  color: var(--color-text-primary, #2B0A12);
   outline: none;
   transition: all 0.15s ease;
   font-family: inherit;
@@ -295,8 +295,8 @@
 .ps-input:focus,
 .ps-select:focus,
 .ps-textarea:focus {
-  border-color: #2997ff;
-  box-shadow: 0 0 0 3px rgba(41, 151, 255, 0.2);
+  border-color: var(--color-brand, #800020);
+  box-shadow: 0 0 0 3px rgba(128, 0, 32, 0.12); background: #FFFFFF;
 }
 
 .ps-input-danger {
@@ -330,24 +330,24 @@
 .ps-search-icon {
   position: absolute;
   left: 12px;
-  color: #86868b;
+  color: var(--color-text-secondary, #5C3D46);
   pointer-events: none;
 }
 
 .ps-search-input {
   width: 100%;
-  background: #16181f;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--color-surface-secondary, #F4F0EA);
+  border: 1px solid var(--color-border, #E5DFD5);
   border-radius: 9px;
   padding: 8px 36px 8px 36px;
   font-size: 13px;
-  color: #f5f5f7;
+  color: var(--color-text-primary, #2B0A12);
   outline: none;
   transition: border-color 0.15s;
 }
 
 .ps-search-input:focus {
-  border-color: #2997ff;
+  border-color: var(--color-brand, #800020);
 }
 
 .ps-search-clear {
@@ -355,16 +355,16 @@
   right: 10px;
   background: transparent;
   border: none;
-  color: #86868b;
+  color: var(--color-text-secondary, #5C3D46);
   cursor: pointer;
 }
 
 /* ── 8. Table Styling ────────────────────────────────────────────────────── */
 .ps-table-container {
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--color-border, #E5DFD5);
   border-radius: 12px;
   overflow: hidden;
-  background: #14151b;
+  background: var(--color-surface-secondary, #F4F0EA);
 }
 
 .ps-table {
@@ -376,16 +376,16 @@
 
 .ps-table th {
   padding: 10px 14px;
-  background: #16181f;
-  color: #86868b;
+  background: var(--color-surface-secondary, #F4F0EA);
+  color: var(--color-text-secondary, #5C3D46);
   font-weight: 500;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  border-bottom: 1px solid var(--color-border, #E5DFD5);
 }
 
 .ps-table td {
   padding: 12px 14px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-  color: #e5e7eb;
+  border-bottom: 1px solid var(--color-border, #E5DFD5);
+  color: var(--color-text-primary, #2B0A12);
 }
 
 .ps-table tr:last-child td {
@@ -401,7 +401,7 @@
 }
 
 .ps-text-muted {
-  color: #86868b;
+  color: var(--color-text-secondary, #5C3D46);
 }
 
 .ps-user-cell {
@@ -414,8 +414,8 @@
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  background: #252836;
-  color: #2997ff;
+  background: var(--color-surface-secondary, #F4F0EA);
+  color: var(--color-brand, #800020);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -438,18 +438,18 @@
 
 .ps-user-name {
   font-weight: 500;
-  color: #f5f5f7;
+  color: var(--color-text-primary, #2B0A12);
 }
 
 .ps-me-tag {
   font-size: 11px;
-  color: #2997ff;
+  color: var(--color-brand, #800020);
   font-weight: normal;
 }
 
 .ps-user-handle {
   font-size: 11.5px;
-  color: #86868b;
+  color: var(--color-text-secondary, #5C3D46);
 }
 
 .ps-perm-badge {
@@ -468,13 +468,13 @@
 }
 
 .ps-perm-badge.admin {
-  background: rgba(41, 151, 255, 0.15);
-  color: #60a5fa;
+  background: rgba(128, 0, 32, 0.12);
+  color: var(--color-brand, #800020);
 }
 
 .ps-perm-badge.member {
   background: rgba(255, 255, 255, 0.08);
-  color: #a4a7b2;
+  color: var(--color-text-secondary, #5C3D46);
 }
 
 .ps-role-chip {
@@ -483,8 +483,8 @@
   gap: 6px;
   padding: 3px 10px;
   border-radius: 8px;
-  background: #1c1d24;
-  border: 1px solid rgba(255, 255, 255, 0.07);
+  background: var(--color-surface-secondary, #F4F0EA);
+  border: 1px solid var(--color-border, #E5DFD5);
   font-size: 12px;
 }
 
@@ -504,18 +504,18 @@
 
 .ps-inline-btn {
   background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.09);
+  border: 1px solid var(--color-border, #E5DFD5);
   border-radius: 6px;
   padding: 4px 10px;
   font-size: 12px;
-  color: #d1d5db;
+  color: var(--color-text-primary, #2B0A12);
   cursor: pointer;
   transition: all 0.15s;
 }
 
 .ps-inline-btn:hover {
   background: rgba(255, 255, 255, 0.12);
-  color: #f5f5f7;
+  color: var(--color-text-primary, #2B0A12);
 }
 
 .ps-btn-danger:hover {
@@ -554,24 +554,24 @@
 }
 
 .ps-filter-pill {
-  background: #16181f;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--color-surface-secondary, #F4F0EA);
+  border: 1px solid var(--color-border, #E5DFD5);
   border-radius: 20px;
   padding: 5px 14px;
   font-size: 12px;
-  color: #86868b;
+  color: var(--color-text-secondary, #5C3D46);
   cursor: pointer;
   transition: all 0.15s;
 }
 
 .ps-filter-pill:hover {
-  color: #f5f5f7;
+  color: var(--color-text-primary, #2B0A12);
 }
 
 .ps-filter-pill.is-active {
-  background: rgba(41, 151, 255, 0.15);
-  border-color: rgba(41, 151, 255, 0.3);
-  color: #2997ff;
+  background: rgba(128, 0, 32, 0.12);
+  border-color: rgba(128, 0, 32, 0.12);
+  color: var(--color-brand, #800020);
 }
 
 /* ── 9. Roles Grid ───────────────────────────────────────────────────────── */
@@ -582,8 +582,8 @@
 }
 
 .ps-role-card {
-  background: #14151b;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--color-surface-secondary, #F4F0EA);
+  border: 1px solid var(--color-border, #E5DFD5);
   border-radius: 12px;
   padding: 16px;
   display: flex;
@@ -601,8 +601,8 @@
   width: 36px;
   height: 36px;
   border-radius: 8px;
-  background: #1d1e26;
-  border: 1px solid rgba(255, 255, 255, 0.07);
+  background: var(--color-surface-secondary, #F4F0EA);
+  border: 1px solid var(--color-border, #E5DFD5);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -617,24 +617,24 @@
 }
 
 .ps-role-avatar-fallback {
-  color: #2997ff;
+  color: var(--color-brand, #800020);
 }
 
 .ps-role-name {
   font-size: 14px;
   font-weight: 600;
-  color: #f5f5f7;
+  color: var(--color-text-primary, #2B0A12);
   margin: 0;
 }
 
 .ps-role-counts {
   font-size: 11.5px;
-  color: #86868b;
+  color: var(--color-text-secondary, #5C3D46);
 }
 
 .ps-role-desc {
   font-size: 12px;
-  color: #a4a7b2;
+  color: var(--color-text-secondary, #5C3D46);
   margin: 0;
   line-height: 1.4;
   flex: 1;
@@ -644,10 +644,10 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  border-top: 1px solid var(--color-border, #E5DFD5);
   padding-top: 8px;
   font-size: 11.5px;
-  color: #86868b;
+  color: var(--color-text-secondary, #5C3D46);
 }
 
 .ps-avatar-stack {
@@ -659,14 +659,14 @@
   width: 22px;
   height: 22px;
   border-radius: 50%;
-  background: #252836;
+  background: var(--color-surface-secondary, #F4F0EA);
   border: 1.5px solid #14151b;
   margin-left: -6px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   font-size: 9px;
-  color: #70baff;
+  color: var(--color-brand, #800020);
   overflow: hidden;
 }
 
@@ -681,7 +681,7 @@
 }
 
 .ps-no-contributors {
-  color: #636674;
+  color: var(--color-text-tertiary, #8A6E76);
   font-size: 11px;
 }
 
@@ -690,8 +690,8 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  background: #14151b;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--color-surface-secondary, #F4F0EA);
+  border: 1px solid var(--color-border, #E5DFD5);
   border-radius: 12px;
   padding: 16px;
 }
@@ -706,25 +706,25 @@
 .ps-level-badge {
   font-size: 12px;
   font-weight: 600;
-  color: #2997ff;
+  color: var(--color-brand, #800020);
 }
 
 .ps-hierarchy-level p {
   font-size: 11.5px;
-  color: #86868b;
+  color: var(--color-text-secondary, #5C3D46);
   margin: 0;
 }
 
 .ps-hierarchy-arrow {
-  color: #636674;
+  color: var(--color-text-tertiary, #8A6E76);
   font-size: 18px;
 }
 
 .ps-perm-matrix {
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--color-border, #E5DFD5);
   border-radius: 12px;
   overflow: hidden;
-  background: #14151b;
+  background: var(--color-surface-secondary, #F4F0EA);
 }
 
 .ps-check-ok {
@@ -741,8 +741,8 @@
   align-items: center;
   justify-content: space-between;
   gap: 20px;
-  background: #14151b;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--color-surface-secondary, #F4F0EA);
+  border: 1px solid var(--color-border, #E5DFD5);
   border-radius: 12px;
   padding: 18px 22px;
 }
@@ -755,7 +755,7 @@
 .ps-danger-info h4 {
   font-size: 14.5px;
   font-weight: 600;
-  color: #f5f5f7;
+  color: var(--color-text-primary, #2B0A12);
   margin: 0;
 }
 
@@ -765,7 +765,7 @@
 
 .ps-danger-info p {
   font-size: 12.5px;
-  color: #86868b;
+  color: var(--color-text-secondary, #5C3D46);
   margin: 4px 0 0 0;
   line-height: 1.4;
 }
@@ -776,9 +776,9 @@
   gap: 10px;
   padding: 12px 16px;
   background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.07);
+  border: 1px solid var(--color-border, #E5DFD5);
   border-radius: 10px;
-  color: #86868b;
+  color: var(--color-text-secondary, #5C3D46);
   font-size: 12.5px;
 }
 
@@ -796,8 +796,8 @@
 }
 
 .ps-nested-modal {
-  background: #15161c;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: var(--color-surface, #FFFFFF);
+  border: 1px solid var(--color-border, #E5DFD5);
   border-radius: 14px;
   width: 100%;
   max-width: 460px;
@@ -810,21 +810,21 @@
   align-items: center;
   justify-content: space-between;
   padding: 14px 18px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
-  background: #181a22;
+  border-bottom: 1px solid var(--color-border, #E5DFD5);
+  background: var(--color-surface-secondary, #F4F0EA);
 }
 
 .ps-nested-header h4 {
   font-size: 14.5px;
   font-weight: 600;
-  color: #f5f5f7;
+  color: var(--color-text-primary, #2B0A12);
   margin: 0;
 }
 
 .ps-nested-header button {
   background: transparent;
   border: none;
-  color: #86868b;
+  color: var(--color-text-secondary, #5C3D46);
   cursor: pointer;
 }
 
@@ -837,7 +837,7 @@
 
 .ps-nested-desc {
   font-size: 12.5px;
-  color: #a4a7b2;
+  color: var(--color-text-secondary, #5C3D46);
   margin: 0;
   line-height: 1.4;
 }
@@ -862,19 +862,19 @@
   gap: 12px;
   padding: 12px;
   border-radius: 10px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  background: #181921;
+  border: 1px solid var(--color-border, #E5DFD5);
+  background: var(--color-surface-secondary, #F4F0EA);
   cursor: pointer;
   transition: all 0.15s;
 }
 
 .ps-radio-option:hover {
-  background: #1d1e28;
+  background: var(--color-surface-tertiary, #EDE8DF);
 }
 
 .ps-radio-option.is-selected {
-  border-color: #2997ff;
-  background: rgba(41, 151, 255, 0.08);
+  border-color: var(--color-brand, #800020);
+  background: rgba(128, 0, 32, 0.12);
 }
 
 .ps-radio-option.is-owner-opt.is-selected {
@@ -889,12 +889,12 @@
 .ps-radio-option b {
   display: block;
   font-size: 13px;
-  color: #f5f5f7;
+  color: var(--color-text-primary, #2B0A12);
 }
 
 .ps-radio-option p {
   font-size: 11.5px;
-  color: #86868b;
+  color: var(--color-text-secondary, #5C3D46);
   margin: 2px 0 0 0;
 }
 
@@ -914,7 +914,7 @@
 
 .ps-confirm-prompt {
   font-size: 12.5px;
-  color: #d1d5db;
+  color: var(--color-text-primary, #2B0A12);
   margin: 0;
 }
 
@@ -929,7 +929,7 @@
 .ps-empty-pane {
   padding: 24px;
   text-align: center;
-  color: #86868b;
+  color: var(--color-text-secondary, #5C3D46);
   font-size: 13px;
 }
 
@@ -950,7 +950,7 @@
     width: 100%;
     flex-direction: row;
     border-right: none;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    border-bottom: 1px solid var(--color-border, #E5DFD5);
     padding: 8px 12px;
     gap: 6px;
   }

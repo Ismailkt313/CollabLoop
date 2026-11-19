@@ -183,7 +183,7 @@ export default function Dashboard({ user, onLogout, onOpenProject }) {
               <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
                 <span>{invitation.projectId?.category || 'General'}</span>
                 {invitation.contributorRoleId?.name && (
-                  <span style={{ color: '#c4b5fd', fontSize: '10px' }}>
+                  <span style={{ color: 'var(--color-brand, #800020)', fontSize: '10.5px', fontWeight: 600 }}>
                     Role: <b>{invitation.contributorRoleId.name}</b>
                   </span>
                 )}

@@ -2,8 +2,6 @@ import React from 'react';
 import { 
   Search, 
   Plus, 
-  Sun, 
-  Moon, 
   Layers, 
   X,
   Users
@@ -99,17 +97,6 @@ export default function Header({
               </button>
             )}
           </div>
-
-          {/* Theme Toggle (Apple Switch) */}
-          <button 
-            type="button" 
-            onClick={() => setDarkMode(!darkMode)}
-            className="theme-toggle-btn"
-            title={darkMode ? 'Switch to Light Appearance' : 'Switch to Dark Appearance'}
-            aria-label="Toggle theme"
-          >
-            {darkMode ? <Sun size={16} /> : <Moon size={16} />}
-          </button>
 
           {/* Add Reference Button */}
           <button 

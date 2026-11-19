@@ -19,8 +19,6 @@ import { buildApiUrl } from './services/apiConfig';
 import projectSocket from './services/projectSocket';
 import { CATEGORIES, INITIAL_REFERENCES } from './data/initialData';
 import {
-  Sun,
-  Moon,
   Building2,
   ShieldCheck,
   Smartphone,
@@ -63,12 +61,10 @@ const DUMMY_IDS = new Set([
 ]);
 
 export default function App() {
-  // Theme state: dark / light
-  const [darkMode, setDarkMode] = useState(() => {
-    const saved = localStorage.getItem(STORAGE_KEY_THEME);
-    if (saved !== null) return JSON.parse(saved);
-    return window.matchMedia('(prefers-color-scheme: dark)').matches;
-  });
+  // Always clean up legacy dark-theme class on mount
+  useEffect(() => {
+    document.documentElement.classList.remove('dark-theme');
+  }, []);
 
   // Authenticated Team Member (Restricts access to the 5 authorized roles)
   const [authenticatedMember, setAuthenticatedMember] = useState(null);
@@ -350,16 +346,6 @@ export default function App() {
     syncLatestMedia({ isSilent: true });
   }, [syncLatestMedia]);
 
-  // Sync Dark Theme class
-  useEffect(() => {
-    if (darkMode) {
-      document.documentElement.classList.add('dark-theme');
-    } else {
-      document.documentElement.classList.remove('dark-theme');
-    }
-    localStorage.setItem(STORAGE_KEY_THEME, JSON.stringify(darkMode));
-  }, [darkMode]);
-
   // Cache references to localStorage
   useEffect(() => {
     try {
@@ -531,14 +517,14 @@ export default function App() {
               <button
                 type="button"
                 onClick={() => { setUrlProjectError(''); setUrlProjectId(null); pushProjectUrl(null); }}
-                style={{ padding: '8px 18px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(255,255,255,0.08)', color: '#e2e8f0', cursor: 'pointer', fontSize: '13px' }}
+                style={{ padding: '8px 18px', borderRadius: '8px', border: '1px solid var(--color-border, #E5DFD5)', background: 'var(--color-surface-secondary, #F4F0EA)', color: 'var(--color-brand, #800020)', cursor: 'pointer', fontSize: '13px', fontWeight: 600 }}
               >
                 Go to Dashboard
               </button>
               <button
                 type="button"
                 onClick={() => { setUrlProjectError(''); setUrlProjectLoading(true); setSelectedProject(null); /* triggers re-fetch */ }}
-                style={{ padding: '8px 18px', borderRadius: '8px', border: 'none', background: '#6366f1', color: '#fff', cursor: 'pointer', fontSize: '13px' }}
+                style={{ padding: '8px 18px', borderRadius: '8px', border: 'none', background: 'var(--color-brand, #800020)', color: '#fff', cursor: 'pointer', fontSize: '13px', fontWeight: 600, boxShadow: '0 2px 6px rgba(128,0,32,0.2)' }}
               >
                 Retry
               </button>
@@ -697,17 +683,6 @@ export default function App() {
                 <span className="auth-member-role-label">({authenticatedMember.shortName})</span>
               </button>
             )}
-
-            {/* Dark / Light Mode Toggle */}
-            <button
-              type="button"
-              onClick={() => setDarkMode(!darkMode)}
-              className="action-icon-btn"
-              title={darkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
-              aria-label="Toggle theme"
-            >
-              {darkMode ? <Sun size={15} /> : <Moon size={15} />}
-            </button>
           </div>
         </div>
       </header>
@@ -739,7 +714,6 @@ export default function App() {
           <CategoryCardsOverview
             categories={CATEGORIES}
             references={references}
-            darkMode={darkMode}
             onSelectCategory={(catId) => setActiveCategory(catId)}
             onOpenUploadModal={(catId) => {
               setUploadModalCategory(catId || 'b2b');
