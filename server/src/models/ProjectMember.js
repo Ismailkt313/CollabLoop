@@ -53,6 +53,9 @@ const memberSchema = new Schema(
 
 /** Ensure a user can only appear once per project */
 memberSchema.index({ projectId: 1, userId: 1 }, { unique: true });
+/** Compound indexes for lightning-fast user dashboard and project membership lookups */
+memberSchema.index({ userId: 1, status: 1 });
+memberSchema.index({ projectId: 1, status: 1 });
 
 const ProjectMember = model('ProjectMember', memberSchema);
 

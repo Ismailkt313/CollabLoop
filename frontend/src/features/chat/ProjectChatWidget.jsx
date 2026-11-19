@@ -27,6 +27,9 @@ import {
   Copy,
   CornerDownRight,
   Search,
+  Minus,
+  Maximize2,
+  Minimize2,
 } from 'lucide-react';
 import { projectSocket } from '../../services/projectSocket';
 import { uploadChatAttachment } from '../../services/cloudinary';
@@ -85,6 +88,7 @@ export default function ProjectChatWidget({
   onCloseForce = () => {},
 }) {
   const [isOpen, setIsOpen] = useState(false);
+  const [chatMode, setChatMode] = useState('compact'); // 'compact' | 'expanded' | 'minimized'
   const [channels, setChannels] = useState([]);
   const [activeChannel, setActiveChannel] = useState(null);
   const [messages, setMessages] = useState([]);
@@ -111,6 +115,7 @@ export default function ProjectChatWidget({
 
   // Channel Dropdown & Management Modals
   const [showChannelDropdown, setShowChannelDropdown] = useState(false);
+  const channelDropdownRef = useRef(null);
   const [channelSearch, setChannelSearch] = useState('');
   const [showChannelModal, setShowChannelModal] = useState(false);
   const [channelModalMode, setChannelModalMode] = useState('create'); // 'create' | 'edit'
@@ -168,6 +173,29 @@ export default function ProjectChatWidget({
       osc.stop(ctx.currentTime + 0.3);
     } catch {}
   }, []);
+
+  // Dismiss channel dropdown on outside click or escape
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (channelDropdownRef.current && !channelDropdownRef.current.contains(event.target)) {
+        setShowChannelDropdown(false);
+      }
+    };
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') {
+        setShowChannelDropdown(false);
+      }
+    };
+
+    if (showChannelDropdown) {
+      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('keydown', handleKeyDown);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [showChannelDropdown]);
 
   // Handle forceOpen from parent
   useEffect(() => {
@@ -752,7 +780,10 @@ export default function ProjectChatWidget({
         <button
           type="button"
           className="collabs-chat-fab-trigger"
-          onClick={() => setIsOpen(true)}
+          onClick={() => {
+            setIsOpen(true);
+            setChatMode('compact');
+          }}
           aria-label="Open project discussion chat"
           title="Open Project Q&A and Team Discussions"
         >
@@ -766,13 +797,49 @@ export default function ProjectChatWidget({
         </button>
       )}
 
+      {/* ── 1b. Minimized Floating Pill ─────────────────────────────────── */}
+      {isOpen && chatMode === 'minimized' && (
+        <aside
+          className="collabs-chat-minimized-pill"
+          onClick={() => setChatMode('compact')}
+          title="Restore project chat"
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && setChatMode('compact')}
+          aria-label="Restore discussion chat"
+        >
+          <span className="minimized-pill-status-dot" />
+          <span className="minimized-pill-name">#{activeChannel?.name || 'chat'}</span>
+          {totalUnread > 0 && <span className="minimized-unread-badge">{totalUnread}</span>}
+          <button
+            type="button"
+            className="minimized-pill-close"
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsOpen(false);
+            }}
+            title="Close chat"
+            aria-label="Close chat"
+          >
+            <X size={13} />
+          </button>
+        </aside>
+      )}
+
       {/* ── 2. Floating Chat Drawer Panel ─────────────────────────────── */}
-      {isOpen && (
-        <div className="collabs-chat-drawer-container" role="dialog" aria-modal="true">
+      {isOpen && chatMode !== 'minimized' && (
+        <div
+          className={`collabs-chat-drawer-container ${chatMode === 'expanded' ? 'is-expanded' : 'is-compact'}`}
+          role="dialog"
+          aria-modal="true"
+        >
+          {/* Mobile Sheet Grab Handle */}
+          <div className="chat-mobile-sheet-handle" aria-hidden="true" />
+
           {/* Header */}
           <div className="chat-drawer-header">
             {/* Channel Switcher */}
-            <div className="header-room-select-group">
+            <div className="header-room-select-group" ref={channelDropdownRef}>
               <button
                 type="button"
                 className="room-picker-toggle-btn"
@@ -886,7 +953,7 @@ export default function ProjectChatWidget({
               )}
             </div>
 
-            {/* User Pill & Close Action */}
+            {/* User Pill & Window Actions */}
             <div className="header-actions-group">
               <div
                 className="chat-profile-pill-btn"
@@ -902,15 +969,37 @@ export default function ProjectChatWidget({
                 <span className="profile-pill-name">@{user.username}</span>
               </div>
 
-              <button
-                type="button"
-                className="chat-close-btn"
-                onClick={() => setIsOpen(false)}
-                title="Close chat"
-                aria-label="Close"
-              >
-                <X size={16} />
-              </button>
+              <div className="chat-window-controls">
+                <button
+                  type="button"
+                  className="chat-control-btn"
+                  onClick={() => setChatMode('minimized')}
+                  title="Minimize chat"
+                  aria-label="Minimize"
+                >
+                  <Minus size={15} />
+                </button>
+
+                <button
+                  type="button"
+                  className="chat-control-btn"
+                  onClick={() => setChatMode((m) => (m === 'expanded' ? 'compact' : 'expanded'))}
+                  title={chatMode === 'expanded' ? 'Restore compact' : 'Expand full size'}
+                  aria-label={chatMode === 'expanded' ? 'Restore compact' : 'Expand'}
+                >
+                  {chatMode === 'expanded' ? <Minimize2 size={15} /> : <Maximize2 size={15} />}
+                </button>
+
+                <button
+                  type="button"
+                  className="chat-control-btn chat-close-btn"
+                  onClick={() => setIsOpen(false)}
+                  title="Close chat"
+                  aria-label="Close"
+                >
+                  <X size={16} />
+                </button>
+              </div>
             </div>
           </div>
 

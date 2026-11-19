@@ -4,6 +4,83 @@ import {authService} from '../services/authService';
 import './TeamAuthGate.css';
 const EMPTY={name:'',username:'',email:'',password:'',confirmPassword:''};
 const CURRENT_YEAR=new Date().getFullYear();
+function AuthIllustration() {
+  return (
+    <div className="auth-story-illustration" aria-hidden="true">
+      <svg
+        viewBox="0 0 340 210"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+        className="auth-svg-graphic"
+      >
+        {/* Subtle decorative connection line */}
+        <path
+          d="M 60 70 C 130 70, 150 140, 230 140"
+          stroke="rgba(128, 0, 32, 0.16)"
+          strokeWidth="2"
+          strokeDasharray="4 4"
+        />
+
+        {/* Card 1: Project Overview Card */}
+        <g filter="url(#cardShadow)">
+          <rect x="24" y="24" width="160" height="96" rx="12" fill="#FFFFFF" stroke="#E5DFD5" strokeWidth="1" />
+          {/* Card header */}
+          <rect x="38" y="38" width="22" height="22" rx="6" fill="#F4F0EA" />
+          <path d="M 45 49 L 53 49 M 49 45 L 49 53" stroke="#800020" strokeWidth="1.8" strokeLinecap="round" />
+          <rect x="68" y="40" width="70" height="8" rx="4" fill="#800020" />
+          <rect x="68" y="52" width="45" height="6" rx="3" fill="#E5DFD5" />
+
+          {/* Progress bar */}
+          <rect x="38" y="74" width="132" height="6" rx="3" fill="#F4F0EA" />
+          <rect x="38" y="74" width="94" height="6" rx="3" fill="#800020" />
+
+          {/* Member avatars */}
+          <circle cx="48" cy="98" r="8" fill="#800020" />
+          <circle cx="60" cy="98" r="8" fill="#F4F0EA" stroke="#FFFFFF" strokeWidth="1.5" />
+          <circle cx="72" cy="98" r="8" fill="#FAF7F2" stroke="#FFFFFF" strokeWidth="1.5" />
+        </g>
+
+        {/* Card 2: Sprint Task / Channel Card */}
+        <g filter="url(#cardShadow)">
+          <rect x="156" y="92" width="160" height="94" rx="12" fill="#FFFFFF" stroke="#E5DFD5" strokeWidth="1" />
+          {/* Status pill */}
+          <rect x="170" y="106" width="60" height="14" rx="7" fill="#F4F0EA" />
+          <circle cx="178" cy="113" r="3" fill="#800020" />
+          <rect x="185" y="111" width="36" height="4" rx="2" fill="#800020" />
+
+          {/* Task bars */}
+          <rect x="170" y="130" width="132" height="6" rx="3" fill="#F4F0EA" />
+          <rect x="170" y="142" width="100" height="6" rx="3" fill="#F4F0EA" />
+          <rect x="170" y="154" width="80" height="6" rx="3" fill="#E5DFD5" />
+
+          {/* Check icon */}
+          <circle cx="288" cy="157" r="9" fill="rgba(128, 0, 32, 0.08)" />
+          <path d="M 284 157 L 287 160 L 292 154" stroke="#800020" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+        </g>
+
+        {/* Chat Sync Notification Pill */}
+        <g filter="url(#pillShadow)">
+          <rect x="74" y="152" width="154" height="30" rx="15" fill="#800020" />
+          <circle cx="89" cy="167" r="3.5" fill="#FFFFFF" />
+          <text x="98" y="171" fill="#FFFFFF" fontSize="10" fontWeight="600" fontFamily="system-ui, sans-serif">
+            # general · sync complete
+          </text>
+        </g>
+
+        {/* SVG Filter Definitions */}
+        <defs>
+          <filter id="cardShadow" x="14" y="18" width="314" height="180" filterUnits="userSpaceOnUse" colorInterpolationFilters="sRGB">
+            <feDropShadow dx="0" dy="4" stdDeviation="6" floodColor="#2B0A12" floodOpacity="0.06" />
+          </filter>
+          <filter id="pillShadow" x="66" y="146" width="170" height="46" filterUnits="userSpaceOnUse" colorInterpolationFilters="sRGB">
+            <feDropShadow dx="0" dy="5" stdDeviation="5" floodColor="#800020" floodOpacity="0.25" />
+          </filter>
+        </defs>
+      </svg>
+    </div>
+  );
+}
+
 export default function TeamAuthGate({onAuthenticated}){
  const resetToken=new URLSearchParams(window.location.search).get('token');const urlMode=new URLSearchParams(window.location.search).get('mode');const [mode,setMode]=useState(resetToken?'reset':urlMode==='forgot'?'forgot':'login');const [form,setForm]=useState(EMPTY);const [visible,setVisible]=useState({password:false,confirmPassword:false});const [error,setError]=useState('');const [notice,setNotice]=useState('');const [busy,setBusy]=useState(false);const [usernameState,setUsernameState]=useState('');
  useEffect(()=>{const trimmed=form.username.trim();if(mode!=='register'||trimmed.length<3){setUsernameState('');return;}const valid=/^[a-z0-9_]{3,30}$/i.test(trimmed);if(!valid){setUsernameState('Use 3–30 letters, numbers or underscores.');return;}let live=true;const controller=new AbortController();setUsernameState('Checking availability…');const timer=setTimeout(()=>{authService.checkUsername(trimmed,{signal:controller.signal}).then(ok=>{if(live)setUsernameState(ok?'Username is available.':'That username is taken.');}).catch(err=>{if(err?.name==='AbortError')return;if(live)setUsernameState('Could not check username right now.');});},400);return()=>{live=false;clearTimeout(timer);controller.abort();};},[mode,form.username]);
@@ -12,7 +89,7 @@ export default function TeamAuthGate({onAuthenticated}){
  const heading={login:'Welcome back',register:'Create your account',forgot:'Reset your password',reset:'Choose a new password'}[mode];const desc={login:'Sign in to continue to your workspace.',register:'One account for all your projects.',forgot:'We’ll email you a secure password reset link.',reset:'Enter a new password for your account.'}[mode];
  const brand=<a className="auth-logo" href="/" onClick={e=>e.preventDefault()}><span className="auth-logo-mark"><img src="/collabloop-monogram.png" alt=""/></span><span>CollabLoop</span></a>;
  const field=(label,name,type='text',placeholder='',autoComplete='off',required=true)=> <label className="auth-field" key={name}><span>{label}</span><div className={`auth-input-wrap ${type==='password'?'has-action':''}`}>{name==='email'&&mode==='login'?<Mail size={16} aria-hidden="true"/>:null}<input name={name} type={type==='password'?(visible[name]?'text':'password'):type} placeholder={placeholder} autoComplete={autoComplete} value={form[name]} onChange={update} required={required}/>{type==='password'&&<button className="auth-visibility" type="button" onClick={()=>setVisible(v=>({...v,[name]:!v[name]}))} aria-label={visible[name]?'Hide password':'Show password'}>{visible[name]?<EyeOff size={17}/>:<Eye size={17}/>}</button>}</div></label>;
- return <main className="auth-screen"><div className="auth-orb auth-orb-blue"/><div className="auth-orb auth-orb-violet"/><div className="auth-layout"><aside className="auth-story">{brand}<div className="auth-story-copy"><h2>Projects,<br/><span>in good company.</span></h2><p>Keep your team, conversations and project work together.</p></div></aside><section className="auth-panel" aria-labelledby="auth-heading"><header className="auth-panel-brand">{brand}</header><div className="auth-panel-content"><div className="auth-heading"><h1 id="auth-heading">{heading}</h1><p>{desc}</p></div><form className="auth-form" onSubmit={submit} noValidate>
+ return <main className="auth-screen"><div className="auth-orb auth-orb-blue"/><div className="auth-orb auth-orb-violet"/><div className="auth-layout"><aside className="auth-story">{brand}<div className="auth-story-copy"><h2>Projects,<br/><span>in good company.</span></h2><p>Keep your team, conversations and project work together.</p></div><AuthIllustration /></aside><section className="auth-panel" aria-labelledby="auth-heading"><header className="auth-panel-brand">{brand}</header><div className="auth-panel-content"><div className="auth-heading"><h1 id="auth-heading">{heading}</h1><p>{desc}</p></div><form className="auth-form" onSubmit={submit} noValidate>
  {mode==='register'&&<>{field('Full name','name','text','Your name','name')}{field('Username','username','text','Choose a username','username')}<small className={`auth-feedback ${usernameState.includes('available')?'success':''} ${usernameState.includes('taken')?'error':''}`} aria-live="polite">{usernameState||'Your unique handle for invitations and team mentions.'}</small></>}
  {(mode==='login'&&field('Email or username','email','text','you@company.com or @username','username'))||(mode==='register'&&field('Email address','email','email','you@company.com','email'))||(mode==='forgot'&&field('Email address','email','email','you@company.com','email'))}
  {(mode==='login'||mode==='register'||mode==='reset')&&<>{field(mode==='reset'?'New password':'Password','password','password',mode==='reset'?'Enter a new password':'Enter your password',mode==='login'?'current-password':'new-password')}{mode==='register'&&<small className="auth-feedback">Choose any password you like.</small>}</>}

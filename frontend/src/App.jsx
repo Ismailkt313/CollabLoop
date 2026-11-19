@@ -67,6 +67,16 @@ export default function App() {
   const [authenticatedMember, setAuthenticatedMember] = useState(null);
   const [authReady, setAuthReady] = useState(false);
   useEffect(() => { authService.current().then((user) => { setAuthenticatedMember(user); setAuthReady(true); }); }, []);
+
+  // Connect global projectSocket for real-time notifications when authenticated
+  useEffect(() => {
+    if (authenticatedMember) {
+      projectSocket.connect();
+    } else {
+      projectSocket.disconnect();
+    }
+  }, [authenticatedMember]);
+
   const [isSwitchRoleModalOpen, setIsSwitchRoleModalOpen] = useState(false);
   const [selectedProject, setSelectedProject] = useState(null);
 
@@ -431,34 +441,50 @@ export default function App() {
   if (new URLSearchParams(window.location.search).has('token') || new URLSearchParams(window.location.search).get('mode') === 'forgot') return <TeamAuthGate onAuthenticated={(user) => setAuthenticatedMember(user)} />;
   if (!authenticatedMember) return <TeamAuthGate onAuthenticated={(user) => { setAuthenticatedMember(user); setSelectedProject(null); }} />;
 
-  // URL-based project loading: show loading or error while fetching from URL
+  // URL-based project loading: show structured skeleton or error while fetching from URL
   if (authenticatedMember && !selectedProject && (urlProjectLoading || urlProjectError)) {
+    if (urlProjectError) {
+      return (
+        <div className="collabs-auth-gate-backdrop" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '16px', textAlign: 'center', padding: '24px' }}>
+          <img src="/collabloop-monogram.png" alt="CollabLoop" style={{ width: '52px', height: '52px', objectFit: 'contain' }} />
+          <p style={{ color: '#f87171', fontSize: '14px', margin: 0 }}>{urlProjectError}</p>
+          <div style={{ display: 'flex', gap: '10px', marginTop: '8px' }}>
+            <button
+              type="button"
+              onClick={() => { setUrlProjectError(''); setUrlProjectId(null); pushProjectUrl(null); }}
+              style={{ padding: '8px 18px', borderRadius: '8px', border: '1px solid var(--color-border, #E5DFD5)', background: 'var(--color-surface-secondary, #F4F0EA)', color: 'var(--color-brand, #800020)', cursor: 'pointer', fontSize: '13px', fontWeight: 600 }}
+            >
+              Go to Dashboard
+            </button>
+            <button
+              type="button"
+              onClick={() => { setUrlProjectError(''); setUrlProjectLoading(true); setSelectedProject(null); }}
+              style={{ padding: '8px 18px', borderRadius: '8px', border: 'none', background: 'var(--color-brand, #800020)', color: '#fff', cursor: 'pointer', fontSize: '13px', fontWeight: 600, boxShadow: '0 2px 6px rgba(128,0,32,0.2)' }}
+            >
+              Retry
+            </button>
+          </div>
+        </div>
+      );
+    }
+
     return (
-      <div className="collabs-auth-gate-backdrop" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '16px', textAlign: 'center', padding: '24px' }}>
-        <img src="/collabloop-monogram.png" alt="CollabLoop" style={{ width: '52px', height: '52px', objectFit: 'contain' }} />
-        {urlProjectLoading ? (
-          <p style={{ color: 'var(--text-secondary, #a4a7b2)', fontSize: '14px', margin: 0 }}>Loading project…</p>
-        ) : (
-          <>
-            <p style={{ color: '#f87171', fontSize: '14px', margin: 0 }}>{urlProjectError}</p>
-            <div style={{ display: 'flex', gap: '10px', marginTop: '8px' }}>
-              <button
-                type="button"
-                onClick={() => { setUrlProjectError(''); setUrlProjectId(null); pushProjectUrl(null); }}
-                style={{ padding: '8px 18px', borderRadius: '8px', border: '1px solid var(--color-border, #E5DFD5)', background: 'var(--color-surface-secondary, #F4F0EA)', color: 'var(--color-brand, #800020)', cursor: 'pointer', fontSize: '13px', fontWeight: 600 }}
-              >
-                Go to Dashboard
-              </button>
-              <button
-                type="button"
-                onClick={() => { setUrlProjectError(''); setUrlProjectLoading(true); setSelectedProject(null); /* triggers re-fetch */ }}
-                style={{ padding: '8px 18px', borderRadius: '8px', border: 'none', background: 'var(--color-brand, #800020)', color: '#fff', cursor: 'pointer', fontSize: '13px', fontWeight: 600, boxShadow: '0 2px 6px rgba(128,0,32,0.2)' }}
-              >
-                Retry
-              </button>
+      <div className="pdl-page" style={{ minHeight: '100vh', background: '#FFFFFF', padding: '28px 32px' }} aria-busy="true" aria-label="Loading project workspace">
+        <header className="pdl-header" style={{ marginBottom: '32px' }}>
+          <div style={{ width: '130px', height: '16px', borderRadius: '6px', background: 'linear-gradient(110deg, #FAF7F2 25%, #F4F0EA 38%, #FAF7F2 62%)', backgroundSize: '300% 100%', animation: 'dashboard-shimmer 1.35s ease infinite', marginBottom: '20px' }} />
+          <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+            <div style={{ width: '64px', height: '64px', borderRadius: '14px', background: 'linear-gradient(110deg, #FAF7F2 25%, #F4F0EA 38%, #FAF7F2 62%)', backgroundSize: '300% 100%', animation: 'dashboard-shimmer 1.35s ease infinite' }} />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <div style={{ width: '240px', height: '24px', borderRadius: '8px', background: 'linear-gradient(110deg, #FAF7F2 25%, #F4F0EA 38%, #FAF7F2 62%)', backgroundSize: '300% 100%', animation: 'dashboard-shimmer 1.35s ease infinite' }} />
+              <div style={{ width: '150px', height: '14px', borderRadius: '6px', background: 'linear-gradient(110deg, #FAF7F2 25%, #F4F0EA 38%, #FAF7F2 62%)', backgroundSize: '300% 100%', animation: 'dashboard-shimmer 1.35s ease infinite' }} />
             </div>
-          </>
-        )}
+          </div>
+        </header>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '20px' }}>
+          {[1, 2, 3, 4].map((n) => (
+            <div key={n} style={{ height: '200px', borderRadius: '14px', border: '1px solid #E5DFD5', background: 'linear-gradient(110deg, #FAF7F2 25%, #F4F0EA 38%, #FAF7F2 62%)', backgroundSize: '300% 100%', animation: 'dashboard-shimmer 1.35s ease infinite' }} />
+          ))}
+        </div>
       </div>
     );
   }

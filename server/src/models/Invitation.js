@@ -47,6 +47,8 @@ const invitationSchema = new Schema(
 );
 
 invitationSchema.index({ projectId: 1, invitedUser: 1, status: 1 });
+invitationSchema.index({ invitedUser: 1, status: 1 });
+invitationSchema.index({ projectId: 1, status: 1 });
 
 const Invitation = model('Invitation', invitationSchema);
 

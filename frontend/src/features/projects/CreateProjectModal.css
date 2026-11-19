@@ -13,9 +13,9 @@
   justify-content: center;
   overflow-y: auto;
   padding: 24px 16px;
-  background: var(--color-surface-overlay, rgba(43, 10, 18, 0.45));
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  background: var(--color-surface-overlay, rgba(43, 10, 18, 0.22));
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
 }
 
 /* Modal Window */
@@ -232,17 +232,17 @@
   align-items: center;
   gap: 14px;
   padding: 14px 16px;
-  border: 1px dashed rgba(255, 255, 255, 0.16);
+  border: 1.5px dashed var(--color-border-strong, #D6CEC2);
   border-radius: 10px;
-  background: rgba(255, 255, 255, 0.02);
+  background: var(--color-surface-secondary, #F4F0EA);
   cursor: pointer;
   transition: all 0.16s ease;
 }
 
 .thumbnail-dropzone:hover,
 .thumbnail-dropzone.drag-active {
-  border-color: rgba(128, 0, 32, 0.12);
-  background: rgba(128, 0, 32, 0.12);
+  border-color: var(--color-brand, #800020);
+  background: rgba(128, 0, 32, 0.04);
 }
 
 .dropzone-icon-box {
@@ -253,8 +253,8 @@
   place-items: center;
   border: 1px solid var(--color-border, #E5DFD5);
   border-radius: 9px;
-  background: #1c1c1e;
-  color: var(--color-text-secondary, #5C3D46);
+  background: #FFFFFF;
+  color: var(--color-brand, #800020);
 }
 
 .dropzone-text {

@@ -140,6 +140,22 @@
   line-height: 1.65;
 }
 
+.auth-story-illustration {
+  margin-top: 18px;
+  width: 100%;
+  max-width: 340px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.auth-svg-graphic {
+  width: 100%;
+  height: auto;
+  max-height: 175px;
+  overflow: visible;
+}
+
 /* Right Form Column: Pure White */
 .auth-panel {
   display: flex;

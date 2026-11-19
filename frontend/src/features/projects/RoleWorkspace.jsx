@@ -31,6 +31,7 @@ import DocumentUploadModal from './DocumentUploadModal';
 import DocumentViewerModal from './DocumentViewerModal';
 import FullscreenLightbox from '../../components/FullscreenLightbox';
 import { buildApiUrl, getAuthHeaders } from '../../services/apiConfig';
+import projectSocket from '../../services/projectSocket';
 
 const api = async (path, options = {}) => {
   const { headers: customHeaders, ...restOptions } = options;
@@ -153,6 +154,65 @@ export default function RoleWorkspace({
   useEffect(() => {
     loadWorkspace();
   }, [loadWorkspace]);
+
+  // Real-time synchronization of media and document assets across collaborating users
+  useEffect(() => {
+    if (!projectId || !roleId) return;
+
+    const currentRoleIdStr = String(role?._id || role?.id || roleId);
+
+    const onResourceCreated = ({ roleId: rId, resource }) => {
+      if (!resource) return;
+      if (String(rId) === currentRoleIdStr || !rId) {
+        setResources((prev) => {
+          const resId = resource._id || resource.id;
+          if (prev.some((r) => (r._id || r.id) === resId)) return prev;
+          return [resource, ...prev];
+        });
+      }
+    };
+
+    const onResourceDeleted = ({ roleId: rId, resourceId }) => {
+      if (String(rId) === currentRoleIdStr || !rId) {
+        setResources((prev) => prev.filter((r) => (r._id || r.id) !== resourceId));
+        if (activeLightboxItem?._id === resourceId) {
+          setActiveLightboxItem(null);
+        }
+      }
+    };
+
+    const onDocumentCreated = ({ roleId: rId, document }) => {
+      if (!document) return;
+      if (String(rId) === currentRoleIdStr || !rId) {
+        setDocuments((prev) => {
+          const docId = document._id || document.id;
+          if (prev.some((d) => (d._id || d.id) === docId)) return prev;
+          return [document, ...prev];
+        });
+      }
+    };
+
+    const onDocumentDeleted = ({ roleId: rId, documentId }) => {
+      if (String(rId) === currentRoleIdStr || !rId) {
+        setDocuments((prev) => prev.filter((d) => (d._id || d.id) !== documentId));
+        if (activeViewingDoc?._id === documentId) {
+          setActiveViewingDoc(null);
+        }
+      }
+    };
+
+    projectSocket.on('resource:created', onResourceCreated);
+    projectSocket.on('resource:deleted', onResourceDeleted);
+    projectSocket.on('document:created', onDocumentCreated);
+    projectSocket.on('document:deleted', onDocumentDeleted);
+
+    return () => {
+      projectSocket.off('resource:created', onResourceCreated);
+      projectSocket.off('resource:deleted', onResourceDeleted);
+      projectSocket.off('document:created', onDocumentCreated);
+      projectSocket.off('document:deleted', onDocumentDeleted);
+    };
+  }, [projectId, roleId, role, activeLightboxItem, activeViewingDoc]);
 
   // Handlers for Upload additions
   const handleMediaUploaded = (newResource) => {

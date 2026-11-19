@@ -16,7 +16,7 @@
   --color-background: #FFFFFF;
   --color-surface: #FFFFFF;
   --color-surface-translucent: rgba(255, 255, 255, 0.92);
-  --color-surface-overlay: rgba(43, 10, 18, 0.45);
+  --color-surface-overlay: rgba(43, 10, 18, 0.22);
 
   /* 2. Secondary: Burgundy */
   --color-brand: #800020;
@@ -185,7 +185,31 @@ button {
 input, textarea, select {
   font-family: inherit;
   font-size: inherit;
-  color: var(--color-text-primary);
+  color: var(--color-text-primary, #2B0A12);
+  background-color: #FFFFFF;
+}
+
+input:focus, textarea:focus, select:focus {
+  background-color: #FFFFFF !important;
+  border-color: var(--color-brand, #800020) !important;
+  color: var(--color-text-primary, #2B0A12) !important;
+  box-shadow: 0 0 0 3px rgba(128, 0, 32, 0.12) !important;
+  outline: none;
+}
+
+input::placeholder, textarea::placeholder {
+  color: var(--color-text-tertiary, #8A6E76);
+}
+
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+textarea:-webkit-autofill,
+textarea:-webkit-autofill:hover,
+textarea:-webkit-autofill:focus {
+  -webkit-text-fill-color: #2B0A12 !important;
+  -webkit-box-shadow: 0 0 0px 1000px #FFFFFF inset !important;
+  transition: background-color 5000s ease-in-out 0s;
 }
 
 /* App container */
@@ -272,4 +296,94 @@ input, textarea, select {
 
 .apple-pill-btn.outlined:hover {
   background-color: var(--color-brand-subtle);
+}
+
+.dashboard-button {
+  display: inline-flex;
+  min-height: 40px;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 0 18px;
+  border-radius: var(--radius-md, 10px);
+  font-family: inherit;
+  font-size: 13.5px;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.16s cubic-bezier(0.16, 1, 0.3, 1);
+  border: 1px solid transparent;
+  box-sizing: border-box;
+}
+
+.dashboard-button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+.dashboard-button.primary {
+  border-color: var(--color-brand, #800020) !important;
+  background-color: var(--color-brand, #800020) !important;
+  color: #FFFFFF !important;
+  box-shadow: 0 2px 6px rgba(128, 0, 32, 0.22);
+}
+
+.dashboard-button.primary * {
+  color: #FFFFFF !important;
+}
+
+.dashboard-button.primary:hover:not(:disabled) {
+  background-color: var(--color-brand-hover, #660019) !important;
+  border-color: var(--color-brand-hover, #660019) !important;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(128, 0, 32, 0.28);
+}
+
+.dashboard-button.primary:active:not(:disabled) {
+  background-color: var(--color-brand-active, #4D0013) !important;
+  transform: translateY(0);
+}
+
+.dashboard-button.secondary {
+  border-color: var(--color-border, #E5DFD5) !important;
+  background-color: var(--color-surface-secondary, #F4F0EA) !important;
+  color: var(--color-brand, #800020) !important;
+  font-weight: 600;
+  box-shadow: var(--shadow-xs);
+}
+
+.dashboard-button.secondary:hover:not(:disabled) {
+  border-color: var(--color-brand, #800020) !important;
+  background-color: var(--color-surface-tertiary, #EDE8DF) !important;
+  color: var(--color-brand-hover, #660019) !important;
+}
+
+.dashboard-button.outline {
+  border-color: var(--color-brand, #800020) !important;
+  background-color: #FFFFFF !important;
+  color: var(--color-brand, #800020) !important;
+  font-weight: 600;
+}
+
+.dashboard-button.outline:hover:not(:disabled) {
+  background-color: var(--color-brand-subtle, rgba(128, 0, 32, 0.08)) !important;
+}
+
+.dashboard-button.btn-compact {
+  min-height: 32px;
+  padding: 0 12px;
+  font-size: 12px;
+  border-radius: var(--radius-sm, 6px);
+}
+
+.dashboard-button.btn-danger {
+  border-color: var(--color-error-border, #FECACA) !important;
+  background-color: var(--color-error-bg, #FEF2F2) !important;
+  color: var(--color-error, #B91C1C) !important;
+}
+
+.dashboard-button.btn-danger:hover:not(:disabled) {
+  background-color: #FEE2E2 !important;
+  border-color: #FCA5A5 !important;
 }

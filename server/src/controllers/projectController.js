@@ -27,13 +27,41 @@ export async function listProjects(req, res) {
     status: 'active',
   }).populate('projectId');
 
-  const projects = memberships
-    .filter((m) => m.projectId && Boolean(m.projectId.isArchived) === isArchived)
-    .map((m) => ({
-      ...m.projectId.toObject(),
+  const validMemberships = memberships.filter(
+    (m) => m.projectId && Boolean(m.projectId.isArchived) === isArchived
+  );
+
+  const projectIds = validMemberships.map((m) => m.projectId._id);
+
+  // High-performance batch query: fetch all active members for all listed projects in one call
+  const allMembers = await ProjectMember.find({
+    projectId: { $in: projectIds },
+    status: 'active',
+  })
+    .populate('userId', 'name username email avatar')
+    .populate('contributorRoleId', 'name description imageUrl');
+
+  const membersByProject = new Map();
+  for (const m of allMembers) {
+    const pid = String(m.projectId);
+    if (!membersByProject.has(pid)) {
+      membersByProject.set(pid, []);
+    }
+    membersByProject.get(pid).push(m);
+  }
+
+  const projects = validMemberships.map((m) => {
+    const projObj = m.projectId.toObject();
+    const pid = String(projObj._id);
+    const team = membersByProject.get(pid) || [];
+    return {
+      ...projObj,
       projectRole: m.projectRole,
       teamFunction: m.teamFunction,
-    }));
+      teamMembers: team,
+      memberCount: team.length,
+    };
+  });
 
   res.json({ projects });
 }
@@ -58,7 +86,10 @@ export async function createProject(req, res, next) {
     const validatedContributors = [];
     const seenUserIds = new Set();
 
-    // Validate contributors before creating project
+    // Fast batch validation
+    const candidateUserIds = [];
+    const candidateRoleIds = [];
+
     for (const [index, item] of rawContributors.entries()) {
       const userId = String(item.userId || item._id || '').trim();
       const contributorRoleId = String(item.contributorRoleId || item.roleId || '').trim();
@@ -80,22 +111,32 @@ export async function createProject(req, res, next) {
         return res.status(400).json({ error: `Contributor #${index + 1} must have an assigned role` });
       }
 
-      // Check user exists
-      const targetUser = await User.findById(userId).select('_id username name email');
-      if (!targetUser) {
-        return res.status(400).json({ error: `Selected user for contributor #${index + 1} was not found` });
+      candidateUserIds.push(userId);
+      candidateRoleIds.push(contributorRoleId);
+    }
+
+    const [foundUsers, foundRoles] = await Promise.all([
+      candidateUserIds.length > 0 ? User.find({ _id: { $in: candidateUserIds } }).select('_id username name email avatar') : [],
+      candidateRoleIds.length > 0 ? ContributorRole.find({ _id: { $in: candidateRoleIds } }).select('_id name description imageUrl') : [],
+    ]);
+
+    const userMap = new Map(foundUsers.map((u) => [String(u._id), u]));
+    const roleMap = new Map(foundRoles.map((r) => [String(r._id), r]));
+
+    for (let i = 0; i < candidateUserIds.length; i++) {
+      const uId = candidateUserIds[i];
+      const rId = candidateRoleIds[i];
+      const u = userMap.get(uId);
+      const r = roleMap.get(rId);
+
+      if (!u) {
+        return res.status(400).json({ error: `Selected user #${i + 1} was not found` });
+      }
+      if (!r) {
+        return res.status(400).json({ error: `Assigned role #${i + 1} was not found` });
       }
 
-      // Check role exists
-      const targetRole = await ContributorRole.findById(contributorRoleId).select('_id name');
-      if (!targetRole) {
-        return res.status(400).json({ error: `Assigned role for contributor #${index + 1} was not found` });
-      }
-
-      validatedContributors.push({
-        user: targetUser,
-        role: targetRole,
-      });
+      validatedContributors.push({ user: u, role: r });
     }
 
     // 1. Create project
@@ -108,7 +149,7 @@ export async function createProject(req, res, next) {
     });
 
     // 2. Add creator as Project Owner
-    await ProjectMember.create({
+    const ownerMemberDoc = await ProjectMember.create({
       projectId: project.id,
       userId: req.user.id,
       projectRole: 'owner',
@@ -117,21 +158,23 @@ export async function createProject(req, res, next) {
       joinedAt: new Date(),
     });
 
-    // 3. Seed default project channels
-    for (const name of DEFAULT_CHANNELS) {
-      await Channel.create({
-        projectId: project.id,
-        name,
-        createdBy: req.user.id,
-        isDefault: name === 'general',
-      });
-    }
+    // 3. Seed default project channels concurrently
+    await Promise.all(
+      DEFAULT_CHANNELS.map((name) =>
+        Channel.create({
+          projectId: project.id,
+          name,
+          createdBy: req.user.id,
+          isDefault: name === 'general',
+        })
+      )
+    );
 
-    // 4. Create pending invitations for contributors
+    // 4. Create pending invitations for contributors concurrently
     const invitations = [];
     const invitationErrors = [];
 
-    for (const contributor of validatedContributors) {
+    const invitationPromises = validatedContributors.map(async (contributor) => {
       try {
         const inv = await Invitation.create({
           projectId: project.id,
@@ -140,7 +183,33 @@ export async function createProject(req, res, next) {
           contributorRoleId: contributor.role._id,
           status: 'pending',
         });
-        invitations.push(inv);
+        const populatedInv = {
+          ...inv.toObject(),
+          projectId: {
+            _id: project._id,
+            name: project.name,
+            thumbnail: project.thumbnail,
+            category: project.category,
+            description: project.description,
+          },
+          invitedBy: {
+            _id: req.user.id,
+            name: req.user.name,
+            username: req.user.username,
+            avatar: req.user.avatar,
+          },
+          contributorRoleId: contributor.role,
+        };
+        invitations.push(populatedInv);
+
+        // Real-time notification to invited user
+        const io = getIO();
+        if (io) {
+          io.to(`user:${contributor.user._id}`).emit('invitation:received', {
+            invitation: populatedInv,
+            actorId: req.user.id,
+          });
+        }
       } catch (invErr) {
         invitationErrors.push({
           userId: contributor.user._id,
@@ -148,13 +217,33 @@ export async function createProject(req, res, next) {
           error: invErr.message,
         });
       }
-    }
+    });
+
+    await Promise.all(invitationPromises);
+
+    const ownerTeamMember = {
+      _id: ownerMemberDoc._id,
+      projectId: project._id,
+      userId: {
+        _id: req.user.id,
+        name: req.user.name,
+        username: req.user.username,
+        email: req.user.email,
+        avatar: req.user.avatar,
+      },
+      projectRole: 'owner',
+      teamFunction: 'Project Owner',
+      status: 'active',
+      joinedAt: ownerMemberDoc.joinedAt,
+    };
 
     res.status(201).json({
       project: {
         ...project.toObject(),
         projectRole: 'owner',
         teamFunction: 'Project Owner',
+        teamMembers: [ownerTeamMember],
+        memberCount: 1,
       },
       invitationsSent: invitations.length,
       invitationErrors: invitationErrors.length > 0 ? invitationErrors : undefined,
@@ -488,7 +577,12 @@ export async function updateProject(req, res, next) {
 
     const io = getIO();
     if (io) {
-      io.to(`project:${projectId}`).emit('project:updated', { project });
+      io.to(`project:${projectId}`).emit('project:updated', { project, actorId: req.user.id });
+
+      const activeMembers = await ProjectMember.find({ projectId, status: 'active' }).select('userId');
+      for (const m of activeMembers) {
+        io.to(`user:${m.userId}`).emit('project:updated', { project, actorId: req.user.id });
+      }
     }
 
     res.json({ project });
@@ -516,7 +610,12 @@ export async function archiveProject(req, res, next) {
 
     const io = getIO();
     if (io) {
-      io.to(`project:${projectId}`).emit('project:archived', { projectId });
+      io.to(`project:${projectId}`).emit('project:archived', { projectId, actorId: req.user.id });
+
+      const activeMembers = await ProjectMember.find({ projectId, status: 'active' }).select('userId');
+      for (const m of activeMembers) {
+        io.to(`user:${m.userId}`).emit('project:archived', { projectId, actorId: req.user.id });
+      }
     }
 
     res.json({ ok: true, project });
@@ -544,7 +643,12 @@ export async function unarchiveProject(req, res, next) {
 
     const io = getIO();
     if (io) {
-      io.to(`project:${projectId}`).emit('project:unarchived', { projectId });
+      io.to(`project:${projectId}`).emit('project:unarchived', { projectId, project, actorId: req.user.id });
+
+      const activeMembers = await ProjectMember.find({ projectId, status: 'active' }).select('userId');
+      for (const m of activeMembers) {
+        io.to(`user:${m.userId}`).emit('project:unarchived', { projectId, project, actorId: req.user.id });
+      }
     }
 
     res.json({ ok: true, project });
@@ -573,6 +677,9 @@ export async function deleteProject(req, res, next) {
         error: `Confirmation failed. Please type "${project.name}" exactly to confirm deletion.`,
       });
     }
+
+    // Capture active members before deleting records for real-time notification
+    const activeMembers = await ProjectMember.find({ projectId, status: 'active' }).select('userId');
 
     // 1. Destroy Cloudinary assets belonging exclusively to this project
     const [resources, documents] = await Promise.all([
@@ -613,7 +720,10 @@ export async function deleteProject(req, res, next) {
     // 4. Notify and disconnect any connected sockets for this project
     const io = getIO();
     if (io) {
-      io.to(`project:${projectId}`).emit('project:deleted', { projectId });
+      io.to(`project:${projectId}`).emit('project:deleted', { projectId, actorId: req.user.id });
+      for (const m of activeMembers) {
+        io.to(`user:${m.userId}`).emit('project:deleted', { projectId, actorId: req.user.id });
+      }
       const sockets = await io.in(`project:${projectId}`).fetchSockets();
       for (const s of sockets) {
         s.leave(`project:${projectId}`);

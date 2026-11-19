@@ -23,6 +23,7 @@ import ProjectChatWidget from '../chat/ProjectChatWidget';
 import ProjectSettingsModal from './ProjectSettingsModal';
 import { parseProjectRoute, pushProjectUrl } from '../../utils/navigation';
 import { buildApiUrl, getAuthHeaders } from '../../services/apiConfig';
+import projectSocket from '../../services/projectSocket';
 import './ProjectDetail.css';
 
 const api = async (path, options = {}) => {
@@ -88,11 +89,11 @@ export default function ProjectDetailLanding({
 
   const projectId = initialProject?._id || initialProject?.id;
 
-  const fetchWorkspaces = useCallback(async () => {
+  const fetchWorkspaces = useCallback(async (silent = false) => {
     if (!projectId) return;
     setError('');
     try {
-      setLoading(true);
+      if (!silent) setLoading(true);
       const data = await api(`/projects/${projectId}/workspaces`);
       setProjectData(data.project);
       setRoles(data.roles || []);
@@ -125,6 +126,97 @@ export default function ProjectDetailLanding({
   useEffect(() => {
     fetchWorkspaces();
   }, [fetchWorkspaces]);
+
+  // Project room subscription and real-time event synchronization
+  useEffect(() => {
+    if (!projectId) return;
+
+    projectSocket.joinProject(projectId);
+    const myId = String(user?._id || user?.id);
+
+    const onProjectUpdated = ({ project: updatedProj }) => {
+      if (updatedProj && (String(updatedProj._id || updatedProj.id) === String(projectId))) {
+        setProjectData((prev) => ({ ...(prev || {}), ...updatedProj }));
+      }
+    };
+
+    const onMemberJoined = ({ member }) => {
+      setStats((prev) => ({ ...prev, totalMembers: (prev.totalMembers || 0) + 1 }));
+      if (member) {
+        setRoles((prevRoles) => {
+          const roleId = String(member.contributorRoleId?._id || member.contributorRoleId || '');
+          const teamFunc = (member.teamFunction || '').toLowerCase().trim();
+          return prevRoles.map((r) => {
+            const matchesId = String(r._id) === roleId;
+            const matchesName = r.name && r.name.toLowerCase().trim() === teamFunc;
+            if (matchesId || matchesName) {
+              const alreadyIn = (r.contributors || []).some(
+                (c) => String(c._id) === String(member._id) || String(c.user?._id || c.user) === String(member.userId?._id || member.userId)
+              );
+              if (alreadyIn) return r;
+              const newContrib = {
+                _id: member._id,
+                user: member.userId,
+                projectRole: member.projectRole,
+                teamFunction: member.teamFunction,
+                joinedAt: member.joinedAt || new Date(),
+              };
+              return {
+                ...r,
+                activeCount: (r.activeCount || 0) + 1,
+                contributors: [newContrib, ...(r.contributors || [])],
+              };
+            }
+            return r;
+          });
+        });
+      }
+    };
+
+    const onMemberRemoved = ({ memberId, userId: removedUserId }) => {
+      setStats((prev) => ({ ...prev, totalMembers: Math.max((prev.totalMembers || 1) - 1, 0) }));
+      if (String(removedUserId) === myId) {
+        onBackToDashboard();
+        return;
+      }
+      setRoles((prevRoles) =>
+        prevRoles.map((r) => ({
+          ...r,
+          activeCount: (r.contributors || []).filter((c) => String(c._id) !== String(memberId)).length,
+          contributors: (r.contributors || []).filter((c) => String(c._id) !== String(memberId)),
+        }))
+      );
+    };
+
+    const onMemberUpdated = ({ member }) => {
+      if (!member) return;
+      if (String(member.userId?._id || member.userId) === myId) {
+        setMembership((prev) => ({ ...(prev || {}), ...member }));
+      }
+      fetchWorkspaces(true);
+    };
+
+    const onProjectDeleted = ({ projectId: deletedId }) => {
+      if (String(deletedId) === String(projectId)) {
+        onBackToDashboard();
+      }
+    };
+
+    projectSocket.on('project:updated', onProjectUpdated);
+    projectSocket.on('project:member_joined', onMemberJoined);
+    projectSocket.on('member:removed', onMemberRemoved);
+    projectSocket.on('member:updated', onMemberUpdated);
+    projectSocket.on('project:deleted', onProjectDeleted);
+
+    return () => {
+      projectSocket.leaveProject(projectId);
+      projectSocket.off('project:updated', onProjectUpdated);
+      projectSocket.off('project:member_joined', onMemberJoined);
+      projectSocket.off('member:removed', onMemberRemoved);
+      projectSocket.off('member:updated', onMemberUpdated);
+      projectSocket.off('project:deleted', onProjectDeleted);
+    };
+  }, [projectId, user, onBackToDashboard, fetchWorkspaces]);
 
   // Synchronize active role workspace on browser back/forward (popstate)
   useEffect(() => {
@@ -177,7 +269,7 @@ export default function ProjectDetailLanding({
   const handleBackToLanding = useCallback(() => {
     setActiveRoleWorkspace(null);
     pushProjectUrl(projectId, null);
-    fetchWorkspaces();
+    fetchWorkspaces(true);
   }, [projectId, fetchWorkspaces]);
 
   const currentProject = projectData || initialProject;

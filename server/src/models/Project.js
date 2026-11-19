@@ -52,6 +52,8 @@ const projectSchema = new Schema(
   { timestamps: true }
 );
 
+projectSchema.index({ isArchived: 1, updatedAt: -1 });
+
 const Project = model('Project', projectSchema);
 
 export default Project;

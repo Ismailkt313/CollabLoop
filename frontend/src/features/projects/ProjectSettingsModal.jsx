@@ -26,6 +26,7 @@ import ContributorSearchInput from './ContributorSearchInput';
 import RoleDropdown from './RoleDropdown';
 import CreateRoleModal from './CreateRoleModal';
 import { buildApiUrl, getAuthHeaders } from '../../services/apiConfig';
+import projectSocket from '../../services/projectSocket';
 import './ProjectSettings.css';
 
 const api = async (path, options = {}) => {
@@ -72,6 +73,7 @@ export default function ProjectSettingsModal({
   onRefreshWorkspaces,
 }) {
   const [activeTab, setActiveTab] = useState('general');
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [toast, setToast] = useState(null); // { type: 'success'|'error', message }
 
   const projectId = project?._id || project?.id;
@@ -198,6 +200,50 @@ export default function ProjectSettingsModal({
     }
     if (activeTab === 'invitations') loadInvitations();
   }, [isOpen, activeTab, loadGlobalRoles, loadMembers, loadWorkspaces, loadInvitations]);
+
+  // Real-time synchronization within settings modal
+  useEffect(() => {
+    if (!isOpen || !projectId) return;
+
+    const onMemberJoined = ({ member }) => {
+      if (!member) return;
+      setMembers((prev) => [member, ...prev.filter((m) => (m._id || m.id) !== (member._id || member.id))]);
+    };
+
+    const onMemberRemoved = ({ memberId }) => {
+      setMembers((prev) => prev.filter((m) => (m._id || m.id) !== memberId));
+    };
+
+    const onMemberUpdated = ({ member }) => {
+      if (!member) return;
+      setMembers((prev) =>
+        prev.map((m) => ((m._id || m.id) === (member._id || member.id) ? member : m))
+      );
+    };
+
+    const onInvitationCreated = ({ invitation }) => {
+      if (!invitation) return;
+      setInvitations((prev) => [invitation, ...prev.filter((i) => (i._id || i.id) !== (invitation._id || invitation.id))]);
+    };
+
+    const onInvitationCancelled = ({ invitationId }) => {
+      setInvitations((prev) => prev.filter((i) => (i._id || i.id) !== invitationId));
+    };
+
+    projectSocket.on('project:member_joined', onMemberJoined);
+    projectSocket.on('member:removed', onMemberRemoved);
+    projectSocket.on('member:updated', onMemberUpdated);
+    projectSocket.on('project:invitation_created', onInvitationCreated);
+    projectSocket.on('project:invitation_cancelled', onInvitationCancelled);
+
+    return () => {
+      projectSocket.off('project:member_joined', onMemberJoined);
+      projectSocket.off('member:removed', onMemberRemoved);
+      projectSocket.off('member:updated', onMemberUpdated);
+      projectSocket.off('project:invitation_created', onInvitationCreated);
+      projectSocket.off('project:invitation_cancelled', onInvitationCancelled);
+    };
+  }, [isOpen, projectId]);
 
   // ── Handlers: Tab 1 General ───────────────────────────────────────────────
   const handleSaveGeneral = async (e) => {
@@ -450,34 +496,95 @@ export default function ProjectSettingsModal({
 
         {/* Modal Body: Sidebar + Main Content */}
         <div className="ps-body">
-          {/* Sidebar Navigation */}
-          <nav className="ps-sidebar" aria-label="Settings sections">
-            {[
+          {/* Foldable Dropdown Navigation on Mobile */}
+          {(() => {
+            const tabsList = [
               { id: 'general', label: 'General', icon: Settings },
               { id: 'members', label: 'Team Members', icon: Users, badge: members.length },
               { id: 'roles', label: 'Contributor Roles', icon: Briefcase, badge: configuredRoles.length },
               { id: 'invitations', label: 'Invitations', icon: Mail, badge: invitations.filter((i) => i.status === 'pending').length },
               { id: 'permissions', label: 'Permissions', icon: Shield },
               { id: 'lifecycle', label: 'Project Lifecycle', icon: Archive, danger: true },
-            ].map((tab) => {
-              const TabIcon = tab.icon;
-              const isActive = activeTab === tab.id;
-              return (
-                <button
-                  key={tab.id}
-                  type="button"
-                  className={`ps-nav-item ${isActive ? 'is-active' : ''} ${tab.danger ? 'is-danger-tab' : ''}`}
-                  onClick={() => setActiveTab(tab.id)}
-                >
-                  <TabIcon size={16} />
-                  <span className="ps-nav-label">{tab.label}</span>
-                  {tab.badge !== undefined && tab.badge > 0 && (
-                    <span className="ps-nav-badge">{tab.badge}</span>
+            ];
+            const currentTab = tabsList.find((t) => t.id === activeTab) || tabsList[0];
+            const CurrentIcon = currentTab.icon;
+
+            return (
+              <>
+                <div className="ps-mobile-nav-bar">
+                  <button
+                    type="button"
+                    className="ps-mobile-nav-trigger"
+                    onClick={() => setMobileNavOpen((prev) => !prev)}
+                    aria-expanded={mobileNavOpen}
+                    aria-label="Toggle settings navigation"
+                  >
+                    <div className="ps-mobile-nav-current">
+                      <CurrentIcon size={16} />
+                      <span>{currentTab.label}</span>
+                      {currentTab.badge !== undefined && currentTab.badge > 0 && (
+                        <span className="ps-nav-badge">{currentTab.badge}</span>
+                      )}
+                    </div>
+                    <div className="ps-mobile-nav-toggle-badge">
+                      <span>Sections</span>
+                      <ChevronDown size={14} className={`ps-chevron ${mobileNavOpen ? 'open' : ''}`} />
+                    </div>
+                  </button>
+
+                  {mobileNavOpen && (
+                    <div className="ps-mobile-nav-dropdown">
+                      {tabsList.map((tab) => {
+                        const TabIcon = tab.icon;
+                        const isActive = activeTab === tab.id;
+                        return (
+                          <button
+                            key={tab.id}
+                            type="button"
+                            className={`ps-mobile-nav-item ${isActive ? 'is-active' : ''} ${tab.danger ? 'is-danger-tab' : ''}`}
+                            onClick={() => {
+                              setActiveTab(tab.id);
+                              setMobileNavOpen(false);
+                            }}
+                          >
+                            <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              <TabIcon size={15} />
+                              <span>{tab.label}</span>
+                            </span>
+                            {tab.badge !== undefined && tab.badge > 0 && (
+                              <span className="ps-nav-badge">{tab.badge}</span>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
                   )}
-                </button>
-              );
-            })}
-          </nav>
+                </div>
+
+                {/* Sidebar Navigation (Desktop) */}
+                <nav className="ps-sidebar" aria-label="Settings sections">
+                  {tabsList.map((tab) => {
+                    const TabIcon = tab.icon;
+                    const isActive = activeTab === tab.id;
+                    return (
+                      <button
+                        key={tab.id}
+                        type="button"
+                        className={`ps-nav-item ${isActive ? 'is-active' : ''} ${tab.danger ? 'is-danger-tab' : ''}`}
+                        onClick={() => setActiveTab(tab.id)}
+                      >
+                        <TabIcon size={16} />
+                        <span className="ps-nav-label">{tab.label}</span>
+                        {tab.badge !== undefined && tab.badge > 0 && (
+                          <span className="ps-nav-badge">{tab.badge}</span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </nav>
+              </>
+            );
+          })()}
 
           {/* Main Settings Content Area */}
           <main className="ps-main-viewport">

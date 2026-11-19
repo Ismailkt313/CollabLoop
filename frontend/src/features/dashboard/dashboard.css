@@ -330,6 +330,86 @@
   font-size: 13.5px;
 }
 
+/* ── Workspace Overview Metrics Bar ─────────────────────────────────────── */
+.dashboard-metrics-bar {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  background: var(--dash-raised, #F4F0EA);
+  border: 1px solid var(--dash-border, #E5DFD5);
+  border-radius: var(--radius-lg, 14px);
+  padding: 16px 24px;
+  margin-bottom: 28px;
+}
+
+.metric-card {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.metric-card.is-actionable {
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 8px;
+  margin: -4px -8px;
+  transition: background 0.15s ease;
+}
+
+.metric-card.is-actionable:hover {
+  background: rgba(128, 0, 32, 0.08);
+}
+
+.metric-number {
+  font-size: 22px;
+  font-weight: 750;
+  color: var(--dash-text, #2B0A12);
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+}
+
+.metric-number.metric-highlight {
+  color: var(--dash-brand, #800020);
+}
+
+.metric-title {
+  font-size: 12px;
+  font-weight: 550;
+  color: var(--dash-muted, #5C3D46);
+}
+
+.metric-divider {
+  width: 1px;
+  height: 32px;
+  background: var(--dash-border, #E5DFD5);
+}
+
+@media (max-width: 640px) {
+  .dashboard-metrics-bar {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    padding: 12px 14px;
+    text-align: center;
+  }
+
+  .metric-card {
+    align-items: center;
+  }
+
+  .metric-number {
+    font-size: 18px;
+  }
+
+  .metric-title {
+    font-size: 11px;
+  }
+
+  .metric-divider {
+    display: none;
+  }
+}
+
 /* Dashboard Buttons */
 .dashboard-button {
   display: inline-flex;
@@ -514,9 +594,16 @@
 
 .my-projects-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
   align-items: stretch;
   gap: 20px;
+}
+
+@media (max-width: 640px) {
+  .my-projects-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
 }
 
 .project-tile {
@@ -548,7 +635,7 @@
 
 .project-tile-cover {
   position: relative;
-  aspect-ratio: 2.55 / 1;
+  aspect-ratio: 2.2 / 1;
   overflow: hidden;
   border-bottom: 1px solid var(--dash-border);
   background: var(--dash-raised);
@@ -924,8 +1011,8 @@
   justify-content: center;
   overflow-y: auto;
   padding: 24px;
-  background: var(--color-surface-overlay, rgba(43, 10, 18, 0.45));
-  backdrop-filter: blur(8px);
+  background: var(--color-surface-overlay, rgba(43, 10, 18, 0.22));
+  backdrop-filter: blur(5px);
 }
 
 .create-project-modal {

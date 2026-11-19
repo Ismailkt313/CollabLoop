@@ -114,7 +114,14 @@ export async function updateMember(req, res, next) {
     const io = getIO();
     if (io) {
       io.to(`project:${projectId}`).emit('member:updated', {
+        projectId,
         member: updated,
+        actorId: req.user.id,
+      });
+      io.to(`user:${targetMember.userId}`).emit('member:updated', {
+        projectId,
+        member: updated,
+        actorId: req.user.id,
       });
     }
 
@@ -162,12 +169,21 @@ export async function removeMember(req, res, next) {
 
     await ProjectMember.findByIdAndDelete(targetMember._id);
 
-    // Socket.IO revocation
+    // Socket.IO revocation and real-time updates
     const io = getIO();
     if (io) {
       io.to(`project:${projectId}`).emit('member:removed', {
+        projectId,
         memberId: targetMember._id,
         userId: targetMember.userId,
+        actorId: req.user.id,
+      });
+
+      io.to(`user:${targetMember.userId}`).emit('member:removed', {
+        projectId,
+        memberId: targetMember._id,
+        userId: targetMember.userId,
+        actorId: req.user.id,
       });
 
       // Eject target user's active sockets from project room

@@ -1,6 +1,5 @@
-import { User, ProjectMember, Invitation, ContributorRole } from '../models/index.js';
-
-
+import { User, ProjectMember, Invitation, ContributorRole, Project } from '../models/index.js';
+import { getIO } from '../sockets/handlers.js';
 
 export async function listInvitations(req, res, next) {
   try {
@@ -70,7 +69,26 @@ export async function createInvitation(req, res, next) {
       status: 'pending',
     });
 
-    res.status(201).json({ invitation });
+    const populatedInvitation = await Invitation.findById(invitation._id)
+      .populate('projectId', 'name thumbnail category description')
+      .populate('invitedBy', 'name username avatar')
+      .populate('contributorRoleId', 'name description imageUrl');
+
+    // Broadcast real-time invitation events
+    const io = getIO();
+    if (io) {
+      io.to(`user:${user.id}`).emit('invitation:received', {
+        invitation: populatedInvitation,
+        actorId: req.user.id,
+      });
+      io.to(`project:${req.params.projectId}`).emit('project:invitation_created', {
+        projectId: req.params.projectId,
+        invitation: populatedInvitation,
+        actorId: req.user.id,
+      });
+    }
+
+    res.status(201).json({ invitation: populatedInvitation });
   } catch (err) {
     next(err);
   }
@@ -101,8 +119,10 @@ export async function respondToInvitation(req, res, next) {
     invitation.respondedAt = new Date();
     await invitation.save();
 
+    let newMemberDoc = null;
+
     if (invitation.status === 'accepted') {
-      const existingMember = await ProjectMember.findOne({
+      let existingMember = await ProjectMember.findOne({
         projectId: invitation.projectId,
         userId: req.user.id,
       });
@@ -114,7 +134,7 @@ export async function respondToInvitation(req, res, next) {
           if (role?.name) teamFunction = role.name;
         }
 
-        await ProjectMember.create({
+        existingMember = await ProjectMember.create({
           projectId: invitation.projectId,
           userId: req.user.id,
           projectRole: 'member',
@@ -124,9 +144,61 @@ export async function respondToInvitation(req, res, next) {
           joinedAt: new Date(),
         });
       }
+
+      newMemberDoc = await ProjectMember.findById(existingMember._id)
+        .populate('userId', 'name username email avatar')
+        .populate('contributorRoleId', 'name description imageUrl');
+
+      const project = await Project.findById(invitation.projectId);
+
+      const io = getIO();
+      if (io) {
+        // Broadcast to project room that a new member joined
+        io.to(`project:${invitation.projectId}`).emit('project:member_joined', {
+          projectId: invitation.projectId,
+          member: newMemberDoc,
+          actorId: req.user.id,
+        });
+
+        // Notify inviter
+        io.to(`user:${invitation.invitedBy}`).emit('invitation:accepted', {
+          invitationId: invitation._id,
+          projectId: invitation.projectId,
+          member: newMemberDoc,
+          actorId: req.user.id,
+        });
+
+        // Notify accepting user's other sessions so their dashboard adds the project immediately
+        if (project) {
+          io.to(`user:${req.user.id}`).emit('project:joined', {
+            project: {
+              ...project.toObject(),
+              projectRole: 'member',
+              teamFunction: newMemberDoc?.teamFunction || 'Member',
+              teamMembers: [newMemberDoc],
+              memberCount: 1,
+            },
+            actorId: req.user.id,
+          });
+        }
+      }
+    } else if (invitation.status === 'rejected') {
+      const io = getIO();
+      if (io) {
+        io.to(`user:${invitation.invitedBy}`).emit('invitation:rejected', {
+          invitationId: invitation._id,
+          projectId: invitation.projectId,
+          actorId: req.user.id,
+        });
+        io.to(`project:${invitation.projectId}`).emit('project:invitation_cancelled', {
+          invitationId: invitation._id,
+          projectId: invitation.projectId,
+          actorId: req.user.id,
+        });
+      }
     }
 
-    res.json({ invitation });
+    res.json({ invitation, member: newMemberDoc });
   } catch (err) {
     next(err);
   }
@@ -175,6 +247,21 @@ export async function cancelInvitation(req, res, next) {
     }
 
     await Invitation.findByIdAndDelete(invitation._id);
+
+    const io = getIO();
+    if (io) {
+      io.to(`user:${invitation.invitedUser}`).emit('invitation:cancelled', {
+        invitationId: invitation._id,
+        projectId,
+        actorId: req.user.id,
+      });
+      io.to(`project:${projectId}`).emit('project:invitation_cancelled', {
+        invitationId: invitation._id,
+        projectId,
+        actorId: req.user.id,
+      });
+    }
+
     res.json({ ok: true, cancelledId: invitation._id });
   } catch (err) {
     next(err);
@@ -194,6 +281,8 @@ export async function resendInvitation(req, res, next) {
       projectId,
       status: 'pending',
     })
+      .populate('projectId', 'name thumbnail category description')
+      .populate('invitedBy', 'name username avatar')
       .populate('invitedUser', 'name username email avatar')
       .populate('contributorRoleId', 'name imageUrl description');
 
@@ -204,6 +293,14 @@ export async function resendInvitation(req, res, next) {
     // Refresh timestamp
     invitation.updatedAt = new Date();
     await invitation.save();
+
+    const io = getIO();
+    if (io && invitation.invitedUser?._id) {
+      io.to(`user:${invitation.invitedUser._id}`).emit('invitation:received', {
+        invitation,
+        actorId: req.user.id,
+      });
+    }
 
     res.json({ ok: true, invitation });
   } catch (err) {

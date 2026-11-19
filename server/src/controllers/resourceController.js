@@ -1,6 +1,7 @@
 import config from '../config/index.js';
 import { Resource, Document } from '../models/index.js';
 import { destroyCloudinaryAsset } from './uploadController.js';
+import { getIO } from '../sockets/handlers.js';
 import {
   ALLOWED_IMAGE_EXTS,
   ALLOWED_VIDEO_EXTS,
@@ -91,6 +92,17 @@ export async function createResource(req, res, next) {
     });
 
     await resource.populate('uploadedBy', 'name username avatar');
+
+    const io = getIO();
+    if (io) {
+      io.to(`project:${req.params.projectId}`).emit('resource:created', {
+        projectId: req.params.projectId,
+        roleId: resource.roleId,
+        resource,
+        actorId: req.user.id,
+      });
+    }
+
     res.status(201).json({ resource });
   } catch (err) {
     next(err);
@@ -170,6 +182,17 @@ export async function createRoleResource(req, res, next) {
     });
 
     await resource.populate('uploadedBy', 'name username avatar');
+
+    const io = getIO();
+    if (io) {
+      io.to(`project:${projectId}`).emit('resource:created', {
+        projectId,
+        roleId: role._id,
+        resource,
+        actorId: req.user.id,
+      });
+    }
+
     res.status(201).json({ resource });
   } catch (err) {
     next(err);
@@ -209,6 +232,17 @@ export async function deleteResource(req, res, next) {
     }
 
     await Resource.findByIdAndDelete(resource._id);
+
+    const io = getIO();
+    if (io) {
+      io.to(`project:${projectId}`).emit('resource:deleted', {
+        projectId,
+        roleId: resource.roleId,
+        resourceId: resource._id,
+        actorId: req.user.id,
+      });
+    }
+
     res.json({ ok: true, deletedId: resource._id });
   } catch (err) {
     next(err);
@@ -295,6 +329,17 @@ export async function createDocument(req, res, next) {
     });
 
     await document.populate('uploadedBy', 'name username avatar');
+
+    const io = getIO();
+    if (io) {
+      io.to(`project:${req.params.projectId}`).emit('document:created', {
+        projectId: req.params.projectId,
+        roleId: document.roleId,
+        document,
+        actorId: req.user.id,
+      });
+    }
+
     res.status(201).json({ document });
   } catch (err) {
     next(err);
@@ -363,6 +408,17 @@ export async function createRoleDocument(req, res, next) {
     });
 
     await document.populate('uploadedBy', 'name username avatar');
+
+    const io = getIO();
+    if (io) {
+      io.to(`project:${projectId}`).emit('document:created', {
+        projectId,
+        roleId: role._id,
+        document,
+        actorId: req.user.id,
+      });
+    }
+
     res.status(201).json({ document });
   } catch (err) {
     next(err);
@@ -403,6 +459,17 @@ export async function deleteDocument(req, res, next) {
     }
 
     await Document.findByIdAndDelete(document._id);
+
+    const io = getIO();
+    if (io) {
+      io.to(`project:${projectId}`).emit('document:deleted', {
+        projectId,
+        roleId: document.roleId,
+        documentId: document._id,
+        actorId: req.user.id,
+      });
+    }
+
     res.json({ ok: true, deletedId: document._id });
   } catch (err) {
     next(err);
