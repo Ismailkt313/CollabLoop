@@ -4,14 +4,15 @@ import ProjectThumbnailUpload from './ProjectThumbnailUpload';
 import ContributorSearchInput from './ContributorSearchInput';
 import RoleDropdown from './RoleDropdown';
 import CreateRoleModal from './CreateRoleModal';
-import { buildApiUrl } from '../../services/apiConfig';
+import { buildApiUrl, getAuthHeaders } from '../../services/apiConfig';
 import './CreateProjectModal.css';
 
 const api = async (path, options = {}) => {
+  const { headers: customHeaders, ...restOptions } = options;
   const response = await fetch(buildApiUrl(path), {
     credentials: 'include',
-    headers: { 'Content-Type': 'application/json', ...(options.headers || {}) },
-    ...options,
+    ...restOptions,
+    headers: getAuthHeaders({ 'Content-Type': 'application/json', ...(customHeaders || {}) }),
   });
   const data = await response.json().catch(() => ({}));
   if (!response.ok) throw new Error(data.error || 'Request failed');

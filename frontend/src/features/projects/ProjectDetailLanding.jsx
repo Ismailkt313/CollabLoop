@@ -22,14 +22,15 @@ import CreateProjectModal from './CreateProjectModal';
 import ProjectChatWidget from '../chat/ProjectChatWidget';
 import ProjectSettingsModal from './ProjectSettingsModal';
 import { parseProjectRoute, pushProjectUrl } from '../../utils/navigation';
-import { buildApiUrl } from '../../services/apiConfig';
+import { buildApiUrl, getAuthHeaders } from '../../services/apiConfig';
 import './ProjectDetail.css';
 
 const api = async (path, options = {}) => {
+  const { headers: customHeaders, ...restOptions } = options;
   const response = await fetch(buildApiUrl(path), {
     credentials: 'include',
-    headers: { 'Content-Type': 'application/json', ...(options.headers || {}) },
-    ...options,
+    ...restOptions,
+    headers: getAuthHeaders({ 'Content-Type': 'application/json', ...(customHeaders || {}) }),
   });
   const data = await response.json().catch(() => ({}));
   if (!response.ok) throw new Error(data.error || 'Request failed');

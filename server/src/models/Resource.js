@@ -81,8 +81,21 @@ const resourceSchema = new Schema(
       },
     ],
   },
-  { timestamps: true }
+  {
+    timestamps: true,
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true },
+  }
 );
+
+// Virtual aliases
+resourceSchema.virtual('secureUrl')
+  .get(function () { return this.fileUrl; })
+  .set(function (v) { this.fileUrl = v; });
+
+resourceSchema.virtual('cloudinaryPublicId')
+  .get(function () { return this.publicId; })
+  .set(function (v) { this.publicId = v; });
 
 /** Latest resources first within a project and role */
 resourceSchema.index({ projectId: 1, createdAt: -1 });

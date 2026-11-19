@@ -1,14 +1,19 @@
-import { buildApiUrl } from './apiConfig.js';
+import { buildApiUrl, getAuthHeaders, setAuthToken, clearAuthToken } from './apiConfig.js';
 
 async function request(path, options = {}) {
   const url = buildApiUrl(path);
+  const { headers: customHeaders, ...restOptions } = options;
+  const isFormData = typeof FormData !== 'undefined' && restOptions.body instanceof FormData;
+  const baseHeaders = isFormData ? {} : { 'Content-Type': 'application/json' };
+  const headers = getAuthHeaders({
+    ...baseHeaders,
+    ...(customHeaders || {}),
+  });
+
   const response = await fetch(url, {
     credentials: 'include',
-    headers: {
-      'Content-Type': 'application/json',
-      ...(options.headers || {}),
-    },
-    ...options,
+    ...restOptions,
+    headers,
   });
 
   const contentType = response.headers.get('content-type') || '';
@@ -31,16 +36,28 @@ export const authService = {
   getAuthenticatedMember: () => null,
   async current() {
     try {
-      return (await request('/auth/me')).user;
+      const data = await request('/auth/me');
+      if (data?.token) {
+        setAuthToken(data.token);
+      }
+      return data?.user || null;
     } catch {
       return null;
     }
   },
   async register(form) {
-    return request('/auth/register', { method: 'POST', body: JSON.stringify(form) });
+    const data = await request('/auth/register', { method: 'POST', body: JSON.stringify(form) });
+    if (data?.token) {
+      setAuthToken(data.token);
+    }
+    return data;
   },
   async login(form) {
-    return request('/auth/login', { method: 'POST', body: JSON.stringify(form) });
+    const data = await request('/auth/login', { method: 'POST', body: JSON.stringify(form) });
+    if (data?.token) {
+      setAuthToken(data.token);
+    }
+    return data;
   },
   async checkUsername(username, options = {}) {
     const data = await request(`/auth/username-availability?username=${encodeURIComponent(username)}`, options);
@@ -53,7 +70,11 @@ export const authService = {
     return request('/auth/reset-password', { method: 'POST', body: JSON.stringify(form) });
   },
   async logout() {
-    await request('/auth/logout', { method: 'POST' });
+    try {
+      await request('/auth/logout', { method: 'POST' });
+    } finally {
+      clearAuthToken();
+    }
   },
   async updateProfile(data) {
     return request('/users/me', { method: 'PATCH', body: JSON.stringify(data) });

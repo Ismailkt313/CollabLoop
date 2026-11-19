@@ -6,7 +6,7 @@
  * and references deleted from any browser are permanently purged across everyone.
  */
 
-import { fetchCloudinaryDeletedIds, markCloudinaryAssetAsDeleted } from './cloudinary';
+import { fetchCloudinaryDeletedIds, markCloudinaryAssetAsDeleted } from './cloudinary.js';
 
 const CLOUD_NAME = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_CLOUDINARY_CLOUD_NAME) || 'dtaz4vhxh';
 const UPLOAD_PRESET = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_CLOUDINARY_UPLOAD_PRESET) || 'CollabS';
@@ -322,98 +322,9 @@ function isDocMarkedDeleted(doc, deletedSet) {
  * @returns {Promise<Array>}
  */
 export async function fetchCloudinaryRawDocs() {
-  if (!CLOUD_NAME) return [];
-  const results = [];
-  const seenIds = new Set();
-
-  // 1. Fetch raw documents (docx, md, txt)
-  try {
-    const res = await fetch(`https://res.cloudinary.com/${CLOUD_NAME}/raw/list/collabs.json?t=${Date.now()}`, {
-      cache: 'no-store'
-    });
-    if (res.ok) {
-      const data = await res.json();
-      if (Array.isArray(data.resources)) {
-        data.resources
-          .filter((item) => item.public_id && item.public_id.includes('collabs/docs/'))
-          .forEach((item) => {
-            const rawFileName = (item.public_id || '').split('/').pop() || 'document';
-            const ext = rawFileName.split('.').pop()?.toLowerCase() || 'docx';
-            const title =
-              item.context?.custom?.title ||
-              item.context?.custom?.caption ||
-              rawFileName.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' ');
-            const isHash = /^[a-z0-9]{15,}$/i.test(rawFileName.replace(/\.[^/.]+$/, ''));
-            const fileName = isHash && title ? `${title}.${ext}` : rawFileName;
-            const fileUrl = `https://res.cloudinary.com/${CLOUD_NAME}/raw/upload/v${item.version}/${item.public_id}`;
-            const d = item.created_at ? new Date(item.created_at) : new Date();
-            const uploadedAt = d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
-            const docId = `cld-doc-${item.public_id.replace(/[^a-zA-Z0-9_-]/g, '_')}`;
-
-            seenIds.add(item.public_id);
-            results.push({
-              id: docId,
-              publicId: item.public_id,
-              title,
-              fileName,
-              format: ext,
-              isPdf: ext === 'pdf',
-              fileUrl,
-              uploadedAt,
-              fileSize: 'Cloud Doc',
-              content: '',
-              isCloudinarySource: true
-            });
-          });
-      }
-    }
-  } catch (err) {
-    console.debug('[CloudSync] Failed to fetch raw docs tag list:', err);
-  }
-
-  // 2. Fetch image list for PDF documents (Cloudinary stores PDFs under image resource_type)
-  try {
-    const imgRes = await fetch(`https://res.cloudinary.com/${CLOUD_NAME}/image/list/docs.json?t=${Date.now()}`, {
-      cache: 'no-store'
-    });
-    if (imgRes.ok) {
-      const imgData = await imgRes.json();
-      if (Array.isArray(imgData.resources)) {
-        imgData.resources.forEach((item) => {
-          if (!item.public_id || seenIds.has(item.public_id)) return;
-          const rawFileName = (item.public_id || '').split('/').pop() || 'document';
-          const title =
-            item.context?.custom?.title ||
-            item.context?.custom?.caption ||
-            rawFileName.replace(/[-_]/g, ' ');
-          const isHash = /^[a-z0-9]{15,}$/i.test(rawFileName.replace(/\.[^/.]+$/, ''));
-          const fileName = isHash && title ? `${title}.pdf` : (rawFileName.endsWith('.pdf') ? rawFileName : `${rawFileName}.pdf`);
-          const d = item.created_at ? new Date(item.created_at) : new Date();
-          const uploadedAt = d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
-          const docId = `cld-doc-${item.public_id.replace(/[^a-zA-Z0-9_-]/g, '_')}`;
-
-          seenIds.add(item.public_id);
-          results.push({
-            id: docId,
-            publicId: item.public_id,
-            title,
-            fileName,
-            format: 'pdf',
-            isPdf: true,
-            fileUrl: `https://res.cloudinary.com/${CLOUD_NAME}/image/upload/v${item.version}/${item.public_id}.pdf`,
-            uploadedAt,
-            fileSize: 'Cloud PDF',
-            pageCount: item.pages || 1,
-            isCloudinarySource: true
-          });
-        });
-      }
-    }
-  } catch (err) {
-    console.debug('[CloudSync] Failed to fetch PDF image docs list:', err);
-  }
-
-  return results;
+  // Legacy Cloudinary client-side resource listing is removed.
+  // Documents are queried through authenticated backend APIs backed by MongoDB.
+  return [];
 }
 
 /**

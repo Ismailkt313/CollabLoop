@@ -16,63 +16,63 @@ import {
 
 const ROLE_THEMES = {
   'backend developer': {
-    accent: '#2997ff',
-    border: 'rgba(41, 151, 255, 0.45)',
-    gradient: 'linear-gradient(135deg, rgba(41, 151, 255, 0.22) 0%, rgba(18, 18, 20, 0.95) 100%)',
+    accent: '#800020',
+    border: 'rgba(128, 0, 32, 0.22)',
+    gradient: 'linear-gradient(135deg, #FAF7F2 0%, #F4EAE6 55%, #EDE1DC 100%)',
     icon: Server,
     tag: 'ENGINEERING',
   },
   'frontend developer': {
-    accent: '#8b6cff',
-    border: 'rgba(139, 108, 255, 0.45)',
-    gradient: 'linear-gradient(135deg, rgba(139, 108, 255, 0.22) 0%, rgba(18, 18, 20, 0.95) 100%)',
+    accent: '#990026',
+    border: 'rgba(153, 0, 38, 0.22)',
+    gradient: 'linear-gradient(135deg, #FAF7F2 0%, #F5ECE9 55%, #EDE2DE 100%)',
     icon: Layout,
     tag: 'INTERFACE',
   },
   'full stack developer': {
-    accent: '#06b6d4',
-    border: 'rgba(6, 182, 212, 0.45)',
-    gradient: 'linear-gradient(135deg, rgba(6, 182, 212, 0.22) 0%, rgba(18, 18, 20, 0.95) 100%)',
+    accent: '#660019',
+    border: 'rgba(102, 0, 25, 0.22)',
+    gradient: 'linear-gradient(135deg, #FAF7F2 0%, #F3EAE7 55%, #EBE0DC 100%)',
     icon: Layers,
     tag: 'FULL STACK',
   },
   'ui/ux designer': {
-    accent: '#ec4899',
-    border: 'rgba(236, 72, 153, 0.45)',
-    gradient: 'linear-gradient(135deg, rgba(236, 72, 153, 0.22) 0%, rgba(18, 18, 20, 0.95) 100%)',
+    accent: '#8A2035',
+    border: 'rgba(138, 32, 53, 0.22)',
+    gradient: 'linear-gradient(135deg, #FAF7F2 0%, #F6ECE9 55%, #EEE2DE 100%)',
     icon: Palette,
     tag: 'DESIGN',
   },
   'qa engineer': {
-    accent: '#10b981',
-    border: 'rgba(16, 185, 129, 0.45)',
-    gradient: 'linear-gradient(135deg, rgba(16, 185, 129, 0.22) 0%, rgba(18, 18, 20, 0.95) 100%)',
+    accent: '#520014',
+    border: 'rgba(82, 0, 20, 0.22)',
+    gradient: 'linear-gradient(135deg, #FAF7F2 0%, #F3E8E6 55%, #EADEDC 100%)',
     icon: CheckCircle2,
     tag: 'QUALITY',
   },
   'devops engineer': {
-    accent: '#f59e0b',
-    border: 'rgba(245, 158, 11, 0.45)',
-    gradient: 'linear-gradient(135deg, rgba(245, 158, 11, 0.22) 0%, rgba(18, 18, 20, 0.95) 100%)',
+    accent: '#7A1528',
+    border: 'rgba(122, 21, 40, 0.22)',
+    gradient: 'linear-gradient(135deg, #FAF7F2 0%, #F5EAE7 55%, #ECE0DD 100%)',
     icon: Terminal,
     tag: 'INFRASTRUCTURE',
   },
   'project manager': {
-    accent: '#a855f7',
-    border: 'rgba(168, 85, 247, 0.45)',
-    gradient: 'linear-gradient(135deg, rgba(168, 85, 247, 0.22) 0%, rgba(18, 18, 20, 0.95) 100%)',
+    accent: '#800020',
+    border: 'rgba(128, 0, 32, 0.22)',
+    gradient: 'linear-gradient(135deg, #FAF7F2 0%, #F4EAE6 55%, #EDE1DC 100%)',
     icon: Kanban,
     tag: 'MANAGEMENT',
   },
 };
 
 const FALLBACK_PALETTE = [
-  { accent: '#2997ff', border: 'rgba(41, 151, 255, 0.45)', tag: 'WORKSPACE' },
-  { accent: '#8b6cff', border: 'rgba(139, 108, 255, 0.45)', tag: 'WORKSPACE' },
-  { accent: '#06b6d4', border: 'rgba(6, 182, 212, 0.45)', tag: 'WORKSPACE' },
-  { accent: '#10b981', border: 'rgba(16, 185, 129, 0.45)', tag: 'WORKSPACE' },
-  { accent: '#f59e0b', border: 'rgba(245, 158, 11, 0.45)', tag: 'WORKSPACE' },
-  { accent: '#ec4899', border: 'rgba(236, 72, 153, 0.45)', tag: 'WORKSPACE' },
+  { accent: '#800020', border: 'rgba(128, 0, 32, 0.22)', tag: 'WORKSPACE' },
+  { accent: '#990026', border: 'rgba(153, 0, 38, 0.22)', tag: 'WORKSPACE' },
+  { accent: '#660019', border: 'rgba(102, 0, 25, 0.22)', tag: 'WORKSPACE' },
+  { accent: '#8A2035', border: 'rgba(138, 32, 53, 0.22)', tag: 'WORKSPACE' },
+  { accent: '#520014', border: 'rgba(82, 0, 20, 0.22)', tag: 'WORKSPACE' },
+  { accent: '#7A1528', border: 'rgba(122, 21, 40, 0.22)', tag: 'WORKSPACE' },
 ];
 
 function getRoleTheme(roleName = '') {
@@ -89,7 +89,7 @@ function getRoleTheme(roleName = '') {
   const picked = FALLBACK_PALETTE[index];
   return {
     ...picked,
-    gradient: `linear-gradient(135deg, ${picked.border} 0%, rgba(18, 18, 20, 0.95) 100%)`,
+    gradient: 'linear-gradient(135deg, #FAF7F2 0%, #F4EAE6 55%, #EDE1DC 100%)',
     icon: Shield,
     tag: 'TEAM ROLE',
   };

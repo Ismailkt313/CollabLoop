@@ -1,4 +1,5 @@
 import { io } from 'socket.io-client';
+import { getAuthToken } from './apiConfig';
 
 class ProjectSocketService {
   constructor() {
@@ -22,8 +23,12 @@ class ProjectSocketService {
       import.meta.env.VITE_BACKEND_URL ||
       (import.meta.env.VITE_API_BASE_URL ? import.meta.env.VITE_API_BASE_URL.replace(/\/api\/?$/, '') : null) ||
       (import.meta.env.PROD ? 'https://collabloop-zov6.onrender.com' : undefined);
+
+    const token = getAuthToken();
+
     this.socket = io(socketUrl || undefined, {
       withCredentials: true,
+      auth: token ? { token } : undefined,
       transports: ['websocket', 'polling'],
       reconnectionAttempts: 10,
       reconnectionDelay: 1000,

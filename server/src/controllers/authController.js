@@ -148,10 +148,12 @@ export async function register(req, res, next) {
       passwordScheme: 'sha256-bcrypt',
     });
 
+    const token = signToken(user.id);
+
     res
-      .cookie('collabloop_session', signToken(user.id), cookieOptions)
+      .cookie('collabloop_session', token, cookieOptions)
       .status(201)
-      .json({ user: safeUser(user) });
+      .json({ user: safeUser(user), token });
   } catch (err) {
     if (err.code === 11000) {
       return res.status(409).json({ error: 'Username or email is already registered' });
@@ -179,9 +181,11 @@ export async function login(req, res, next) {
       return res.status(401).json({ error: 'Invalid email or password' });
     }
 
+    const token = signToken(user.id);
+
     res
-      .cookie('collabloop_session', signToken(user.id), cookieOptions)
-      .json({ user: safeUser(user) });
+      .cookie('collabloop_session', token, cookieOptions)
+      .json({ user: safeUser(user), token });
   } catch (err) {
     next(err);
   }
@@ -202,5 +206,6 @@ export function logout(_req, res) {
  * Return the currently authenticated user.
  */
 export function getMe(req, res) {
-  res.json({ user: safeUser(req.user) });
+  const token = req.cookies?.collabloop_session || req.get('authorization')?.replace(/^Bearer /, '');
+  res.json({ user: safeUser(req.user), token });
 }

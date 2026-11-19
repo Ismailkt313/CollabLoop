@@ -42,7 +42,7 @@ app.use(helmet());
 const allowedOrigins = config.clientOrigin.split(',').map((o) => o.trim());
 app.use(
   cors({
-    origin: (origin, callback) => {
+    origin: (origin, callback) => { 
       if (!origin || allowedOrigins.includes(origin)) {
         return callback(null, true);
       }

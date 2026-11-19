@@ -11,7 +11,7 @@ import {
   CheckCircle2,
 } from 'lucide-react';
 import { uploadRoleMedia } from '../../services/cloudinary';
-import { buildApiUrl } from '../../services/apiConfig';
+import { buildApiUrl, getAuthHeaders } from '../../services/apiConfig';
 
 const ACCEPTED_IMAGE_TYPES = [
   'image/png',
@@ -179,13 +179,25 @@ export default function MediaUploadModal({
     setUploadProgress(15);
 
     try {
-      // 1. Upload media to Cloudinary (backend signed)
+      // 1. Upload media to Cloudinary (direct backend upload or backend-signed upload)
       setUploadProgress(35);
       const uploadResult = await uploadRoleMedia(file, {
         projectId,
         roleId,
         title: title.trim(),
+        description: description.trim(),
+        tags: tagsInput,
       });
+
+      // If direct backend upload already created the MongoDB record, finish immediately
+      if (uploadResult?.resource) {
+        setUploadProgress(100);
+        if (onUploaded) {
+          onUploaded(uploadResult.resource);
+        }
+        onClose();
+        return;
+      }
 
       setUploadProgress(75);
 
@@ -199,7 +211,7 @@ export default function MediaUploadModal({
       const res = await fetch(buildApiUrl(`/projects/${projectId}/workspaces/${encodeURIComponent(roleId)}/resources`), {
         method: 'POST',
         credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify({
           title: title.trim(),
           description: description.trim(),

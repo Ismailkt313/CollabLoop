@@ -1,4 +1,4 @@
-import { buildApiUrl } from './apiConfig.js';
+import { buildApiUrl, getAuthHeaders } from './apiConfig.js';
 
 const CLOUD_NAME = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_CLOUDINARY_CLOUD_NAME) || 'dtaz4vhxh';
 const UPLOAD_PRESET = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_CLOUDINARY_UPLOAD_PRESET) || 'CollabS';
@@ -23,7 +23,7 @@ export async function uploadChatAttachment(file, { projectId, title = '', resour
     const signRes = await fetch(buildApiUrl(`/projects/${projectId}/chat/upload-signature?type=chat`), {
       method: 'POST',
       credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
       body: JSON.stringify({ type: 'chat' }),
     });
 
@@ -68,165 +68,224 @@ export async function uploadChatAttachment(file, { projectId, title = '', resour
             height: data.height,
           };
         } else {
-          console.warn('[Cloudinary] Backend signed chat upload error:', data.error?.message);
+          throw new Error(data.error?.message || 'Cloud storage upload rejected the attachment');
         }
       }
     }
   } catch (err) {
-    console.warn('[Cloudinary] Backend signed chat upload failed, falling back:', err);
+    console.warn('[Cloudinary] Backend signed chat upload error:', err);
+    throw err;
   }
 
-  // Graceful fallback
-  if (file.type.startsWith('image/')) {
-    const res = await uploadMediaToCloudinary(file, { category: 'chat', title });
-    return {
-      url: res.url,
-      publicId: res.publicId,
-      resourceType: 'image',
-      format: res.format,
-      fileName: file.name,
-      fileSize: file.size,
-      width: res.width,
-      height: res.height,
-    };
+  throw new Error('Chat attachment upload failed: unable to obtain backend authorization');
+}
+
+/**
+ * Uploads media (images/videos) scoped to a project role workspace.
+ * Preferred workflow: Direct upload through authenticated Node.js backend.
+ * Secondary workflow: Backend-authorized signed upload.
+ */
+export async function uploadRoleMedia(file, { projectId, roleId, title = '', description = '', tags = [] } = {}) {
+  // 1. Preferred workflow: Submit directly to Node.js backend
+  try {
+    const formData = new FormData();
+    formData.append('file', file);
+    if (title) formData.append('title', title.trim());
+    if (description) formData.append('description', description.trim());
+    if (tags) {
+      formData.append('tags', Array.isArray(tags) ? tags.join(',') : String(tags));
+    }
+
+    const uploadUrl = buildApiUrl(`/projects/${projectId}/workspaces/${encodeURIComponent(roleId)}/resources/upload`);
+    const directRes = await fetch(uploadUrl, {
+      method: 'POST',
+      credentials: 'include',
+      headers: getAuthHeaders(),
+      body: formData,
+    });
+
+    if (directRes.ok) {
+      const data = await directRes.json();
+      if (data.resource) {
+        return {
+          resource: data.resource,
+          url: data.resource.fileUrl || data.resource.secureUrl,
+          publicId: data.resource.publicId || data.resource.cloudinaryPublicId,
+          resourceType: data.resource.resourceType,
+          format: data.resource.format,
+          fileSize: data.resource.fileSize,
+        };
+      }
+    } else if (directRes.status === 400 || directRes.status === 403 || directRes.status === 404) {
+      const errData = await directRes.json().catch(() => ({}));
+      throw new Error(errData.error || `Upload rejected by backend (status ${directRes.status})`);
+    }
+  } catch (err) {
+    if (err.message && !err.message.includes('Failed to fetch')) {
+      throw err;
+    }
   }
 
-  const docRes = await uploadDocToCloudinary(file, { title });
+  // 2. Secondary workflow: Backend-signed direct browser upload
+  const signRes = await fetch(buildApiUrl(`/projects/${projectId}/workspaces/${encodeURIComponent(roleId)}/resources/upload-signature?type=media`), {
+    method: 'POST',
+    credentials: 'include',
+    headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
+    body: JSON.stringify({ type: 'media' }),
+  });
+
+  if (!signRes.ok) {
+    const errData = await signRes.json().catch(() => ({}));
+    throw new Error(errData.error || 'Failed to obtain authorized upload signature from backend');
+  }
+
+  const signData = await signRes.json();
+  if (!signData.cloudName || !signData.apiKey || !signData.signature) {
+    throw new Error('Server-side Cloudinary credentials are not configured');
+  }
+
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('api_key', signData.apiKey);
+  formData.append('timestamp', signData.timestamp);
+  formData.append('signature', signData.signature);
+  formData.append('folder', signData.folder);
+
+  if (title) {
+    const cleanTitle = title.replace(/[|;=]/g, ' ').trim();
+    formData.append('context', `caption=${cleanTitle}|title=${cleanTitle}`);
+  }
+
+  const uploadUrl = `https://api.cloudinary.com/v1_1/${signData.cloudName}/auto/upload`;
+  const res = await fetch(uploadUrl, {
+    method: 'POST',
+    body: formData,
+  });
+
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    throw new Error(data.error?.message || 'Failed to upload media to cloud storage');
+  }
+
+  const secureUrl = (data.secure_url || data.url || '').replace(/^http:\/\//i, 'https://');
   return {
-    url: docRes.url,
-    publicId: docRes.publicId,
-    resourceType: file.type.startsWith('audio/') ? 'voice' : 'file',
-    format: docRes.format,
-    fileName: file.name || 'attachment',
-    fileSize: docRes.bytes || file.size,
+    url: secureUrl,
+    publicId: data.public_id,
+    resourceType: data.resource_type || (file.type.startsWith('video/') ? 'video' : 'image'),
+    width: data.width,
+    height: data.height,
+    format: data.format,
+    duration: data.duration,
+    bytes: data.bytes || file.size,
   };
 }
 
 /**
- * Uploads media (images/videos) scoped to a project role workspace using backend signing.
- * Falls back to unsigned upload preset if backend signing is unavailable.
+ * Uploads a document (.pdf, .docx, .md, .txt) scoped to a project role workspace.
+ * Preferred workflow: Direct upload through authenticated Node.js backend.
+ * Secondary workflow: Backend-authorized signed upload.
  */
-export async function uploadRoleMedia(file, { projectId, roleId, title = '' } = {}) {
-  try {
-    const signRes = await fetch(buildApiUrl(`/projects/${projectId}/workspaces/${encodeURIComponent(roleId)}/resources/upload-signature?type=media`), {
-      method: 'POST',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ type: 'media' }),
-    });
-
-    if (signRes.ok) {
-      const signData = await signRes.json();
-      if (signData.cloudName && signData.apiKey && signData.signature) {
-        const formData = new FormData();
-        formData.append('file', file);
-        formData.append('api_key', signData.apiKey);
-        formData.append('timestamp', signData.timestamp);
-        formData.append('signature', signData.signature);
-        formData.append('folder', signData.folder);
-
-        if (title) {
-          const cleanTitle = title.replace(/[|;=]/g, ' ').trim();
-          formData.append('context', `caption=${cleanTitle}|title=${cleanTitle}`);
-        }
-
-        const uploadUrl = `https://api.cloudinary.com/v1_1/${signData.cloudName}/auto/upload`;
-        const res = await fetch(uploadUrl, {
-          method: 'POST',
-          body: formData,
-        });
-
-        const data = await res.json();
-        if (res.ok) {
-          const secureUrl = (data.secure_url || data.url || '').replace(/^http:\/\//i, 'https://');
-          return {
-            url: secureUrl,
-            publicId: data.public_id,
-            resourceType: data.resource_type || (file.type.startsWith('video/') ? 'video' : 'image'),
-            width: data.width,
-            height: data.height,
-            format: data.format,
-            duration: data.duration,
-            bytes: data.bytes || file.size,
-          };
-        } else {
-          console.warn('[Cloudinary] Backend signed role media upload error:', data.error?.message);
-        }
-      }
-    }
-  } catch (err) {
-    console.warn('[Cloudinary] Backend signed role media upload failed, falling back:', err);
-  }
-
-  return uploadMediaToCloudinary(file, { category: 'media', title });
-}
-
-/**
- * Uploads a document (.pdf, .docx, .md, .txt) scoped to a project role workspace using backend signing.
- * Falls back to unsigned upload preset if backend signing is unavailable.
- */
-export async function uploadRoleDocument(file, { projectId, roleId, title = '' } = {}) {
+export async function uploadRoleDocument(file, { projectId, roleId, title = '', description = '', tags = [] } = {}) {
   const ext = (file.name || '').split('.').pop()?.toLowerCase() || '';
 
+  // 1. Preferred workflow: Submit directly to Node.js backend
   try {
-    const signRes = await fetch(buildApiUrl(`/projects/${projectId}/workspaces/${encodeURIComponent(roleId)}/documents/upload-signature?type=documents`), {
+    const formData = new FormData();
+    formData.append('file', file);
+    if (title) formData.append('title', title.trim());
+    if (description) formData.append('description', description.trim());
+    if (tags) {
+      formData.append('tags', Array.isArray(tags) ? tags.join(',') : String(tags));
+    }
+
+    const uploadUrl = buildApiUrl(`/projects/${projectId}/workspaces/${encodeURIComponent(roleId)}/documents/upload`);
+    const directRes = await fetch(uploadUrl, {
       method: 'POST',
       credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ type: 'documents' }),
+      headers: getAuthHeaders(),
+      body: formData,
     });
 
-    if (signRes.ok) {
-      const signData = await signRes.json();
-      if (signData.cloudName && signData.apiKey && signData.signature) {
-        const formData = new FormData();
-        formData.append('file', file);
-        formData.append('api_key', signData.apiKey);
-        formData.append('timestamp', signData.timestamp);
-        formData.append('signature', signData.signature);
-        formData.append('folder', signData.folder);
-
-        if (title) {
-          const cleanTitle = title.replace(/[|;=]/g, ' ').trim();
-          formData.append('context', `caption=${cleanTitle}|title=${cleanTitle}`);
-        }
-
-        // Try auto/upload first, then raw/upload if needed
-        let res = await fetch(`https://api.cloudinary.com/v1_1/${signData.cloudName}/auto/upload`, {
-          method: 'POST',
-          body: formData,
-        });
-
-        let data = await res.json().catch(() => ({}));
-        if (!res.ok) {
-          // Retry with raw
-          res = await fetch(`https://api.cloudinary.com/v1_1/${signData.cloudName}/raw/upload`, {
-            method: 'POST',
-            body: formData,
-          });
-          data = await res.json().catch(() => ({}));
-        }
-
-        if (res.ok) {
-          const secureUrl = (data.secure_url || data.url || '').replace(/^http:\/\//i, 'https://');
-          return {
-            url: secureUrl,
-            publicId: data.public_id,
-            resourceType: data.resource_type || (ext === 'pdf' ? 'image' : 'raw'),
-            format: data.format || ext,
-            pages: data.pages || 1,
-            bytes: data.bytes || file.size,
-          };
-        } else {
-          console.warn('[Cloudinary] Backend signed role document upload error:', data.error?.message);
-        }
+    if (directRes.ok) {
+      const data = await directRes.json();
+      if (data.document) {
+        return {
+          document: data.document,
+          url: data.document.fileUrl || data.document.secureUrl,
+          publicId: data.document.publicId || data.document.cloudinaryPublicId,
+          resourceType: data.document.format === 'pdf' ? 'image' : 'raw',
+          format: data.document.format || ext,
+          fileSize: data.document.fileSize,
+        };
       }
+    } else if (directRes.status === 400 || directRes.status === 403 || directRes.status === 404) {
+      const errData = await directRes.json().catch(() => ({}));
+      throw new Error(errData.error || `Upload rejected by backend (status ${directRes.status})`);
     }
   } catch (err) {
-    console.warn('[Cloudinary] Backend signed role document upload failed, falling back:', err);
+    if (err.message && !err.message.includes('Failed to fetch')) {
+      throw err;
+    }
   }
 
-  return uploadDocToCloudinary(file, { title });
+  // 2. Secondary workflow: Backend-signed direct browser upload
+  const signRes = await fetch(buildApiUrl(`/projects/${projectId}/workspaces/${encodeURIComponent(roleId)}/documents/upload-signature?type=documents`), {
+    method: 'POST',
+    credentials: 'include',
+    headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
+    body: JSON.stringify({ type: 'documents' }),
+  });
+
+  if (!signRes.ok) {
+    const errData = await signRes.json().catch(() => ({}));
+    throw new Error(errData.error || 'Failed to obtain authorized document upload signature from backend');
+  }
+
+  const signData = await signRes.json();
+  if (!signData.cloudName || !signData.apiKey || !signData.signature) {
+    throw new Error('Server-side Cloudinary credentials are not configured');
+  }
+
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('api_key', signData.apiKey);
+  formData.append('timestamp', signData.timestamp);
+  formData.append('signature', signData.signature);
+  formData.append('folder', signData.folder);
+
+  if (title) {
+    const cleanTitle = title.replace(/[|;=]/g, ' ').trim();
+    formData.append('context', `caption=${cleanTitle}|title=${cleanTitle}`);
+  }
+
+  // Try auto/upload first, then raw/upload if needed
+  let res = await fetch(`https://api.cloudinary.com/v1_1/${signData.cloudName}/auto/upload`, {
+    method: 'POST',
+    body: formData,
+  });
+
+  let data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    res = await fetch(`https://api.cloudinary.com/v1_1/${signData.cloudName}/raw/upload`, {
+      method: 'POST',
+      body: formData,
+    });
+    data = await res.json().catch(() => ({}));
+  }
+
+  if (!res.ok) {
+    throw new Error(data.error?.message || 'Failed to upload document to cloud storage');
+  }
+
+  const secureUrl = (data.secure_url || data.url || '').replace(/^http:\/\//i, 'https://');
+  return {
+    url: secureUrl,
+    publicId: data.public_id,
+    resourceType: data.resource_type || (ext === 'pdf' ? 'image' : 'raw'),
+    format: data.format || ext,
+    pages: data.pages || 1,
+    bytes: data.bytes || file.size,
+  };
 }
 
 /**
@@ -242,7 +301,7 @@ export async function uploadSignedMedia(file, { folder = 'collabloop/general', p
     const signRes = await fetch(signUrl, {
       method: 'POST',
       credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
       body: JSON.stringify({ folder }),
     });
 
@@ -271,16 +330,16 @@ export async function uploadSignedMedia(file, { folder = 'collabloop/general', p
             resourceType: data.resource_type || 'image',
           };
         } else {
-          console.warn('[Cloudinary] Backend signed upload returned error:', data.error?.message);
+          throw new Error(data.error?.message || 'Cloud storage upload rejected the file');
         }
       }
     }
   } catch (err) {
-    console.warn('[Cloudinary] Backend signed upload failed:', err);
+    console.warn('[Cloudinary] Backend signed upload error:', err);
+    throw err;
   }
 
-  // Graceful fallback to client preset if available
-  return uploadMediaToCloudinary(file, { category: folder.split('/').pop() || 'general' });
+  throw new Error('Upload failed: unable to obtain backend authorization');
 }
 
 /**
@@ -470,232 +529,45 @@ export function extractPublicIdFromUrl(url) {
 }
 
 /**
- * Fetches globally deleted asset IDs recorded on Cloudinary via the collabs_deleted tag list.
- * Returns a Set containing all variations (raw, sanitized, and cld- prefixed) of deleted IDs.
- * @returns {Promise<Set<string>>} Set of deleted clean IDs
+ * Legacy stub: Cloudinary client-side resource lists are removed.
+ * MongoDB is the authoritative source of truth for all media metadata.
+ * @returns {Promise<Set<string>>}
  */
 export async function fetchCloudinaryDeletedIds() {
-  if (!isCloudinaryConfigured()) return new Set();
-
-  try {
-    const res = await fetch(`https://res.cloudinary.com/${CLOUD_NAME}/image/list/collabs_deleted.json?t=${Date.now()}`, {
-      cache: 'no-store'
-    });
-
-    if (res.ok) {
-      const data = await res.json();
-      if (Array.isArray(data.resources)) {
-        const deletedIds = data.resources.flatMap((r) => {
-          const raw = (r.public_id || '').replace('collabs/deleted/', '');
-          const clean = raw.replace(/[^a-zA-Z0-9_-]/g, '_');
-          return [raw, clean, `cld-${clean}`, `cld-${raw}`];
-        });
-        return new Set(deletedIds.filter(Boolean));
-      }
-    }
-  } catch (err) {
-    console.debug('Failed to fetch deleted ids marker list:', err);
-  }
   return new Set();
 }
 
 /**
- * Persists a deletion marker to Cloudinary with tag collabs_deleted.
- * Allows every browser in the world to immediately see that this reference was deleted.
- * @param {string} id - Reference ID
- * @param {string} publicId - Optional Cloudinary publicId
- * @param {string} imageUrl - Optional media URL
+ * Legacy stub: Cloudinary deletion markers are deprecated.
+ * Deletion is handled securely by the Node.js backend.
  * @returns {Promise<boolean>}
  */
-export async function markCloudinaryAssetAsDeleted(id, publicId = '', imageUrl = '') {
-  if (!isCloudinaryConfigured()) return false;
-
-  const targets = new Set();
-  if (id) {
-    targets.add(id.replace(/^cld-/, ''));
-  }
-  if (publicId) {
-    targets.add(publicId.replace(/^cld-/, ''));
-  }
-  if (imageUrl) {
-    const extracted = extractPublicIdFromUrl(imageUrl);
-    if (extracted) targets.add(extracted);
-  }
-
-  const results = [];
-  for (const t of targets) {
-    const cleanTarget = t.replace(/[^a-zA-Z0-9_-]/g, '_');
-    if (!cleanTarget) continue;
-
-    try {
-      const formData = new FormData();
-      // 1x1 transparent png marker
-      const base64Data = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
-      const binary = atob(base64Data);
-      const bytes = new Uint8Array(binary.length);
-      for (let i = 0; i < binary.length; i++) {
-        bytes[i] = binary.charCodeAt(i);
-      }
-      const blob = new Blob([bytes], { type: 'image/png' });
-
-      formData.append('file', blob);
-      formData.append('upload_preset', UPLOAD_PRESET);
-      formData.append('tags', 'collabs_deleted');
-      formData.append('public_id', `collabs/deleted/${cleanTarget}`);
-
-      const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`, {
-        method: 'POST',
-        body: formData
-      });
-
-      results.push(res.ok);
-    } catch (err) {
-      console.warn('Failed to post deletion marker to Cloudinary:', err);
-    }
-  }
-
-  return results.some(Boolean);
+export async function markCloudinaryAssetAsDeleted() {
+  return true;
 }
 
 /**
- * Retrieves all media items directly from Cloudinary using the collabs tag list JSON.
- * Automatically classifies items into b2b, admin, and driver categories,
- * and strips any assets marked as deleted.
- * @returns {Promise<{ success: boolean, items: Array, deletedIds: Array, requiresSetting?: boolean }>}
+ * Legacy stub: Cloudinary client-side tag/resource listing is disabled.
+ * All project media must be queried through authenticated Node.js APIs backed by MongoDB.
+ * @returns {Promise<{ success: boolean, items: Array, deletedIds: Array, requiresSetting: boolean }>}
  */
 export async function fetchAllCloudinaryMedia() {
-  if (!isCloudinaryConfigured()) {
-    return { success: false, items: [], deletedIds: [], unconfigured: true };
-  }
-
-  const items = [];
-  let requiresSetting = false;
-
-  // 1. Fetch globally deleted IDs first
-  const globalDeletedSet = await fetchCloudinaryDeletedIds();
-
-  // 2. Fetch collabs global tag list for images
-  try {
-    const imgRes = await fetch(`https://res.cloudinary.com/${CLOUD_NAME}/image/list/collabs.json?t=${Date.now()}`, {
-      cache: 'no-store'
-    });
-
-    if (imgRes.status === 401 || imgRes.status === 403) {
-      requiresSetting = true;
-    } else if (imgRes.ok) {
-      const data = await imgRes.json();
-      if (Array.isArray(data.resources)) {
-        data.resources.forEach((res) => {
-          // Skip 1x1 test pixels or marker images
-          if (res.width <= 10 && res.height <= 10) return;
-          if (res.public_id && res.public_id.includes('collabs/deleted/')) return;
-
-          const rawPublicId = res.public_id;
-          const cleanPublicId = rawPublicId.replace(/[^a-zA-Z0-9_-]/g, '_');
-          const cleanId = `cld-${cleanPublicId}`;
-
-          // Check if marked as deleted
-          if (
-            globalDeletedSet.has(rawPublicId) ||
-            globalDeletedSet.has(cleanPublicId) ||
-            globalDeletedSet.has(cleanId) ||
-            globalDeletedSet.has(`cld-${rawPublicId}`)
-          ) {
-            return;
-          }
-
-          let cat = 'b2b';
-          const folder = (res.asset_folder || '').toLowerCase();
-          const pub = (res.public_id || '').toLowerCase();
-
-          if (folder.includes('admin') || pub.includes('admin')) cat = 'admin';
-          else if (folder.includes('driver') || pub.includes('driver')) cat = 'driver';
-          else if (folder.includes('b2b') || pub.includes('b2b')) cat = 'b2b';
-
-          items.push({
-            id: cleanId,
-            publicId: res.public_id,
-            title: res.context?.custom?.caption || res.context?.custom?.title || `${cat.toUpperCase()} Reference`,
-            category: cat,
-            resourceType: 'image',
-            imageUrl: `https://res.cloudinary.com/${CLOUD_NAME}/image/upload/v${res.version}/${res.public_id}.${res.format}`,
-            createdAt: res.created_at,
-            isCloudinarySource: true,
-          });
-        });
-      }
-    }
-  } catch (err) {
-    console.debug('Cloudinary collabs tag fetch error:', err);
-  }
-
-  // 3. Also check video collabs tag list
-  try {
-    const vidRes = await fetch(`https://res.cloudinary.com/${CLOUD_NAME}/video/list/collabs.json?t=${Date.now()}`, {
-      cache: 'no-store'
-    });
-
-    if (vidRes.ok) {
-      const data = await vidRes.json();
-      if (Array.isArray(data.resources)) {
-        data.resources.forEach((res) => {
-          if (res.public_id && res.public_id.includes('collabs/deleted/')) return;
-
-          const rawPublicId = res.public_id;
-          const cleanPublicId = rawPublicId.replace(/[^a-zA-Z0-9_-]/g, '_');
-          const cleanId = `cld-${cleanPublicId}`;
-
-          if (
-            globalDeletedSet.has(rawPublicId) ||
-            globalDeletedSet.has(cleanPublicId) ||
-            globalDeletedSet.has(cleanId) ||
-            globalDeletedSet.has(`cld-${rawPublicId}`)
-          ) {
-            return;
-          }
-
-          let cat = 'b2b';
-          const folder = (res.asset_folder || '').toLowerCase();
-          const pub = (res.public_id || '').toLowerCase();
-
-          if (folder.includes('admin') || pub.includes('admin')) cat = 'admin';
-          else if (folder.includes('driver') || pub.includes('driver')) cat = 'driver';
-
-          items.push({
-            id: cleanId,
-            publicId: res.public_id,
-            title: res.context?.custom?.caption || res.context?.custom?.title || `${cat.toUpperCase()} Video Reference`,
-            category: cat,
-            resourceType: 'video',
-            imageUrl: `https://res.cloudinary.com/${CLOUD_NAME}/video/upload/v${res.version}/${res.public_id}.${res.format}`,
-            createdAt: res.created_at,
-            isCloudinarySource: true,
-          });
-        });
-      }
-    }
-  } catch (err) {
-    console.debug('Cloudinary video list fetch error:', err);
-  }
-
   return {
-    success: !requiresSetting,
-    items,
-    deletedIds: Array.from(globalDeletedSet),
-    requiresSetting
+    success: true,
+    items: [],
+    deletedIds: [],
+    requiresSetting: false,
   };
 }
 
 /**
- * Filtered convenience fetch for a specific category.
- * @param {string} category - 'b2b', 'admin', or 'driver'
- * @returns {Promise<{ success: boolean, items: Array, requiresSetting?: boolean }>}
+ * Filtered convenience fetch stub.
+ * @returns {Promise<{ success: boolean, items: Array, requiresSetting: boolean }>}
  */
-export async function fetchCloudinaryCategoryMedia(category) {
-  const all = await fetchAllCloudinaryMedia();
+export async function fetchCloudinaryCategoryMedia() {
   return {
-    success: all.success,
-    requiresSetting: all.requiresSetting,
-    items: all.items.filter((item) => item.category === category)
+    success: true,
+    requiresSetting: false,
+    items: [],
   };
 }

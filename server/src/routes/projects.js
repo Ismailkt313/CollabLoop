@@ -45,7 +45,12 @@ import {
   createRoleDocument,
   deleteDocument,
 } from '../controllers/resourceController.js';
-import { signUpload } from '../controllers/uploadController.js';
+import {
+  signUpload,
+  uploadMiddleware,
+  uploadDirectRoleResource,
+  uploadDirectRoleDocument,
+} from '../controllers/uploadController.js';
 
 const router = Router();
 
@@ -60,6 +65,10 @@ router.get('/:projectId/workspaces/:roleId', requireAuth, requireMembership, get
 router.post('/:projectId/archive', requireAuth, requireMembership, requireOwner, archiveProject);
 router.post('/:projectId/unarchive', requireAuth, requireMembership, requireOwner, unarchiveProject);
 router.delete('/:projectId', requireAuth, requireMembership, requireOwner, deleteProject);
+
+// ── Role Workspace Direct Uploads (Multipart -> Node -> Cloudinary -> MongoDB) ──
+router.post('/:projectId/workspaces/:roleId/resources/upload', requireAuth, requireMembership, uploadMiddleware.single('file'), uploadDirectRoleResource);
+router.post('/:projectId/workspaces/:roleId/documents/upload', requireAuth, requireMembership, uploadMiddleware.single('file'), uploadDirectRoleDocument);
 
 // ── Role Workspace Upload Signatures ───────────────────────────────────────
 router.post('/:projectId/workspaces/:roleId/resources/upload-signature', requireAuth, requireMembership, signUpload);

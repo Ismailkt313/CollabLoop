@@ -32,13 +32,14 @@ import { projectSocket } from '../../services/projectSocket';
 import { uploadChatAttachment } from '../../services/cloudinary';
 import VoiceMessagePlayer from '../../components/VoiceMessagePlayer';
 import FullscreenLightbox from '../../components/FullscreenLightbox';
-import { buildApiUrl } from '../../services/apiConfig';
+import { buildApiUrl, getAuthHeaders } from '../../services/apiConfig';
 
 const api = async (path, options = {}) => {
+  const { headers: customHeaders, ...restOptions } = options;
   const response = await fetch(buildApiUrl(path), {
     credentials: 'include',
-    headers: { 'Content-Type': 'application/json', ...(options.headers || {}) },
-    ...options,
+    ...restOptions,
+    headers: getAuthHeaders({ 'Content-Type': 'application/json', ...(customHeaders || {}) }),
   });
   const data = await response.json().catch(() => ({}));
   if (!response.ok) throw new Error(data.error || 'Request failed');
@@ -756,8 +757,7 @@ export default function ProjectChatWidget({
           title="Open Project Q&A and Team Discussions"
         >
           <div className="fab-icon-wrapper">
-            <MessageSquare size={17} />
-            <span className="fab-online-dot" />
+            <MessageSquare size={18} strokeWidth={2.2} />
           </div>
           <span className="fab-label">Ask Doubts</span>
           {totalUnread > 0 && (

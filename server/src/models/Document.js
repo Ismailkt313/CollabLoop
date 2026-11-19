@@ -71,8 +71,21 @@ const documentSchema = new Schema(
       },
     ],
   },
-  { timestamps: true }
+  {
+    timestamps: true,
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true },
+  }
 );
+
+// Virtual aliases
+documentSchema.virtual('secureUrl')
+  .get(function () { return this.fileUrl; })
+  .set(function (v) { this.fileUrl = v; });
+
+documentSchema.virtual('cloudinaryPublicId')
+  .get(function () { return this.publicId; })
+  .set(function (v) { this.publicId = v; });
 
 /** Latest documents first within a project and role */
 documentSchema.index({ projectId: 1, createdAt: -1 });

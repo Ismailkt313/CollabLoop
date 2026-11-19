@@ -13,7 +13,7 @@ import {
 } from 'lucide-react';
 import { uploadRoleDocument } from '../../services/cloudinary';
 import { parseDocFile } from '../../services/docParser';
-import { buildApiUrl } from '../../services/apiConfig';
+import { buildApiUrl, getAuthHeaders } from '../../services/apiConfig';
 
 const ACCEPTED_EXTENSIONS = ['pdf', 'docx', 'md', 'markdown', 'txt'];
 const MAX_DOC_SIZE_BYTES = 50 * 1024 * 1024; // 50MB
@@ -162,7 +162,19 @@ export default function DocumentUploadModal({
         projectId,
         roleId,
         title: title.trim(),
+        description: description.trim(),
+        tags: tagsInput,
       });
+
+      // If direct backend upload already created the MongoDB record, finish immediately
+      if (uploadResult?.document) {
+        setUploadProgress(100);
+        if (onUploaded) {
+          onUploaded(uploadResult.document);
+        }
+        onClose();
+        return;
+      }
 
       setUploadProgress(75);
 
@@ -182,7 +194,7 @@ export default function DocumentUploadModal({
       const res = await fetch(buildApiUrl(`/projects/${projectId}/workspaces/${encodeURIComponent(roleId)}/documents`), {
         method: 'POST',
         credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify({
           title: title.trim(),
           description: description.trim(),

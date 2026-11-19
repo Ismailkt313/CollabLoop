@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Search, X, User, Check, RefreshCw, Mail } from 'lucide-react';
-import { buildApiUrl } from '../../services/apiConfig';
+import { buildApiUrl, getAuthHeaders } from '../../services/apiConfig';
 
 const api = async (path) => {
   const res = await fetch(buildApiUrl(path), {
     credentials: 'include',
-    headers: { 'Content-Type': 'application/json' },
+    headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
   });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(data.error || 'Request failed');

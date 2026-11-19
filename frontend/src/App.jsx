@@ -15,7 +15,7 @@ import ProjectDetailLanding from './features/projects/ProjectDetailLanding';
 import './features/dashboard/dashboard.css';
 import SwitchRoleModal from './components/SwitchRoleModal';
 import { authService } from './services/authService';
-import { buildApiUrl } from './services/apiConfig';
+import { buildApiUrl, getAuthHeaders } from './services/apiConfig';
 import projectSocket from './services/projectSocket';
 import { CATEGORIES, INITIAL_REFERENCES } from './data/initialData';
 import {
@@ -38,10 +38,7 @@ import {
   replaceProjectUrl
 } from './utils/navigation';
 import {
-  isCloudinaryConfigured,
-  fetchAllCloudinaryMedia,
-  fetchCloudinaryCategoryMedia,
-  markCloudinaryAssetAsDeleted
+  isCloudinaryConfigured
 } from './services/cloudinary';
 
 const STORAGE_KEY_REFS = 'collabs_minimal_refs_v2';
@@ -88,7 +85,10 @@ export default function App() {
 
     (async () => {
       try {
-        const response = await fetch(buildApiUrl(`/projects/${urlProjectId}`), { credentials: 'include' });
+        const response = await fetch(buildApiUrl(`/projects/${urlProjectId}`), {
+          credentials: 'include',
+          headers: getAuthHeaders(),
+        });
         if (cancelled) return;
         if (response.status === 401) {
           // Session expired — will fall through to auth gate
@@ -271,80 +271,15 @@ export default function App() {
     }
   };
 
-  // Sync from Cloudinary
+  // Local media sync helper
   const syncLatestMedia = useCallback(async ({ isSilent = false } = {}) => {
     if (!isSilent) {
       setIsRefreshing(true);
+      setTimeout(() => setIsRefreshing(false), 300);
     }
-
-    try {
-      // Query Cloudinary directly for all team media (with Cloudinary deletedIds filtering)
-      if (cloudinaryReady) {
-        const res = await fetchAllCloudinaryMedia();
-        setCloudinaryNeedsSetting(Boolean(res.requiresSetting));
-
-        if (res.success && Array.isArray(res.items)) {
-          // Ingest globally deleted IDs from Cloudinary into persistent local storage
-          if (Array.isArray(res.deletedIds) && res.deletedIds.length > 0) {
-            res.deletedIds.forEach((dId) => markIdAsDeleted(dId));
-          }
-          const allDeletedSet = getDeletedIds();
-
-          setReferences((prev) => {
-            const cloudItemIds = new Set(res.items.map((it) => it.id));
-            const cloudPublicIds = new Set(res.items.map((it) => it.publicId).filter(Boolean));
-
-            // Purge deleted items from prev
-            // Keep ONLY local items that are strictly unsynced uploads pending their first Cloudinary indexing
-            const pendingLocalUnsynced = prev.filter((item) => {
-              if (!item || !item.id) return false;
-              if (allDeletedSet.has(item.id)) return false;
-              if (item.publicId && allDeletedSet.has(item.publicId)) return false;
-              if (DUMMY_IDS.has(item.id)) return false;
-              return (
-                item.isLocalUnsynced &&
-                !cloudItemIds.has(item.id) &&
-                (!item.publicId || !cloudPublicIds.has(item.publicId))
-              );
-            });
-
-            // Authoritative Cloudinary items (filtered against any deleted set)
-            const validCloudItems = res.items.filter((item) => {
-              if (!item || !item.id) return false;
-              if (allDeletedSet.has(item.id)) return false;
-              if (item.publicId && allDeletedSet.has(item.publicId)) return false;
-              return true;
-            });
-
-            const reconciled = [...pendingLocalUnsynced, ...validCloudItems];
-
-            // Stable diff check: do not trigger re-render if references array is identical in IDs and length
-            if (
-              prev.length === reconciled.length &&
-              prev.every((item, idx) => item.id === reconciled[idx]?.id)
-            ) {
-              return prev; // Prevents unnecessary re-render and flickering!
-            }
-
-            return reconciled;
-          });
-        }
-      }
-    } catch (err) {
-      console.warn('Sync check error:', err);
-    } finally {
-      if (!isSilent) {
-        setIsRefreshing(false);
-      }
-      const now = new Date();
-      setLastUpdatedText(now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
-    }
-  }, [cloudinaryReady]);
-
-  // Initial sync on component mount
-  useEffect(() => {
-    syncLatestMedia({ isSilent: true });
-  }, [syncLatestMedia]);
+    const now = new Date();
+    setLastUpdatedText(now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
+  }, []);
 
   // Cache references to localStorage
   useEffect(() => {
@@ -468,14 +403,7 @@ export default function App() {
         }
       }
 
-      // 4. Record deletion marker on Cloudinary so EVERY OTHER BROWSER knows it is deleted!
-      try {
-        await markCloudinaryAssetAsDeleted(id, pubId, imgUrl);
-      } catch (err) {
-        console.warn('Failed to record deletion on Cloudinary:', err);
-      }
-
-      // 5. Close confirmation modal and show Apple toast notification
+      // 4. Close confirmation modal and show Apple toast notification
       setItemPendingDelete(null);
       setToast({
         type: 'delete',
